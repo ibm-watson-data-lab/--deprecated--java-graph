@@ -1,4 +1,4 @@
-package com.ibm.graph;
+package com.ibm.graph.client;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
