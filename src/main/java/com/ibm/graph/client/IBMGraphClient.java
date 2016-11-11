@@ -61,7 +61,6 @@ public class IBMGraphClient {
         if (this.baseURL == null) {
             throw new RuntimeException("Invalid configuration. Please specify a valid apiURL, username, and password.");
         }
-        // Get Session Token
         HttpGet httpGet = new HttpGet(this.baseURL + "/_session");
         httpGet.setHeader("Authorization", this.basicAuthHeader);
         CloseableHttpClient httpclient = HttpClients.createDefault();
