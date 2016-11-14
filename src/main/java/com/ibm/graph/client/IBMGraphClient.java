@@ -2,6 +2,7 @@ package com.ibm.graph.client;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -83,7 +84,7 @@ public class IBMGraphClient {
 
     public Vertex addVertex(Vertex vertex) throws Exception {
         String url = this.apiURL + "/vertices";
-        JSONObject jsonContent = this.postJSONObjectToUrl(new JSONObject(vertex), url);
+        JSONObject jsonContent = this.post(new JSONObject(vertex), url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         if (data.length() > 0) {
             return Vertex.fromJSONObject(data.getJSONObject(0));
@@ -93,12 +94,18 @@ public class IBMGraphClient {
 
     public Edge addEdge(Edge edge) throws Exception {
         String url = this.apiURL + "/edges";
-        JSONObject jsonContent = this.postJSONObjectToUrl(new JSONObject(edge), url);
+        JSONObject jsonContent = this.post(new JSONObject(edge), url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         if (data.length() > 0) {
             return Edge.fromJSONObject(data.getJSONObject(0));
         }
         return null;
+    }
+
+    public boolean deleteVertex(Object id) throws Exception {
+        String url = this.apiURL + "/vertices/" + id;
+        JSONObject jsonContent = this.delete(url);
+        return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
     }
 
     public Element[] runGremlinQuery(String query) throws Exception {
@@ -108,7 +115,7 @@ public class IBMGraphClient {
         String url = this.apiURL + "/gremlin";
         JSONObject postData = new JSONObject();
         postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
-        JSONObject jsonContent = this.postJSONObjectToUrl(postData, url);
+        JSONObject jsonContent = this.post(postData, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         List<Element> elements = new ArrayList<Element>();
         if (data.length() > 0) {
@@ -119,7 +126,7 @@ public class IBMGraphClient {
         return elements.toArray(new Element[0]);
     }
 
-    private JSONObject postJSONObjectToUrl(JSONObject json, String url) throws Exception {
+    private JSONObject post(JSONObject json, String url) throws Exception {
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Authorization", this.gdsTokenAuth);
         httpPost.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
@@ -127,6 +134,23 @@ public class IBMGraphClient {
         CloseableHttpResponse httpResponse = null;
         try {
             httpResponse = httpclient.execute(httpPost);
+            HttpEntity httpEntity = httpResponse.getEntity();
+            String content = EntityUtils.toString(httpEntity);
+            EntityUtils.consume(httpEntity);
+            return new JSONObject(content);
+        }
+        finally {
+            httpResponse.close();
+        }
+    }
+
+    private JSONObject delete(String url) throws Exception {
+        HttpDelete httpDelete = new HttpDelete(url);
+        httpDelete.setHeader("Authorization", this.gdsTokenAuth);
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        CloseableHttpResponse httpResponse = null;
+        try {
+            httpResponse = httpclient.execute(httpDelete);
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);

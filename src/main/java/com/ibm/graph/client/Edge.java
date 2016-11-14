@@ -73,11 +73,8 @@ public class Edge extends Entity {
         return outVLabel;
     }
 
-
-
     public String getInVLabel() {
         return inVLabel;
     }
-
 
 }
