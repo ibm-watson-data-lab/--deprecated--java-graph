@@ -10,6 +10,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +30,8 @@ public class IBMGraphClient {
     private String baseURL;
     private String basicAuthHeader;
     private String gdsTokenAuth;
+
+    private static Logger logger =  LoggerFactory.getLogger(IBMGraphClient.class);
 
     public IBMGraphClient() throws Exception {
         Map envs = System.getenv();
@@ -133,7 +137,9 @@ public class IBMGraphClient {
     }
 
     public Element[] runGremlinQuery(String query) throws Exception {
-        System.out.println("Running Gremlin Query: " + query);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Running Gremlin Query: " + query);
+        }
         String url = this.apiURL + "/gremlin";
         JSONObject postData = new JSONObject();
         postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
@@ -157,6 +163,9 @@ public class IBMGraphClient {
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Authorization", this.gdsTokenAuth);
         httpGet.setHeader("Accept", "application/json");
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Making HTTP GET request to %s",url));
+        }
         return doHttpRequest(httpGet);
     }
 
@@ -164,12 +173,15 @@ public class IBMGraphClient {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
+        String payload = json.toString();
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Authorization", this.gdsTokenAuth);
         httpPost.setHeader("Content-Type", "application/json");
         httpPost.setHeader("Accept", "application/json");
-        System.out.println(json.toString());
-        httpPost.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
+        httpPost.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Making HTTP POST request to %s; payload=%s",url,payload));
+        }
         return doHttpRequest(httpPost);
     }
 
@@ -177,12 +189,15 @@ public class IBMGraphClient {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
+        String payload = json.toString();
         HttpPut httpPut = new HttpPut(url);
         httpPut.setHeader("Authorization", this.gdsTokenAuth);
         httpPut.setHeader("Content-Type", "application/json");
         httpPut.setHeader("Accept", "application/json");
-        System.out.println(json.toString());
-        httpPut.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
+        httpPut.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Making HTTP PUT request to %s; payload=%s",url,payload));
+        }
         return doHttpRequest(httpPut);
     }
 
@@ -193,6 +208,9 @@ public class IBMGraphClient {
         HttpDelete httpDelete = new HttpDelete(url);
         httpDelete.setHeader("Authorization", this.gdsTokenAuth);
         httpDelete.setHeader("Accept", "application/json");
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Making HTTP DELETE request to %s",url));
+        }
         return doHttpRequest(httpDelete);
     }
 
@@ -204,6 +222,9 @@ public class IBMGraphClient {
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Response received from %s = %s",request.getURI(),content));
+            }
             return new JSONObject(content);
         }
         finally {

@@ -1,5 +1,7 @@
 package com.ibm.graph.client;
 
+import org.apache.wink.json4j.JSON;
+import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.HashMap;
@@ -50,5 +52,18 @@ public class Entity extends Element {
 
     public HashMap getProperties() {
         return properties;
+    }
+
+    public Object getPropertyValue(String propertyName) throws Exception {
+        Object o = this.properties.get(propertyName);
+        if (o instanceof JSONArray) {
+            return ((JSONArray)o).getJSONObject(0).get("value");
+        }
+        else if (o instanceof JSONObject && ((JSONObject)o).has("value")) {
+            return ((JSONObject)o).get("value");
+        }
+        else {
+            return o;
+        }
     }
 }
