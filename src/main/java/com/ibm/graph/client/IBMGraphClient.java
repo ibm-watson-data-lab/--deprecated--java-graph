@@ -1,10 +1,8 @@
 package com.ibm.graph.client;
 
+import com.ibm.graph.client.schema.Schema;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -55,7 +53,7 @@ public class IBMGraphClient {
 
     private void init() {
         this.basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
-        this.baseURL = this.apiURL.substring(0, this.apiURL.length() - 2);
+        this.baseURL = this.apiURL.substring(0, this.apiURL.lastIndexOf('/'));
     }
 
     private void initSession() throws Exception {
@@ -82,9 +80,35 @@ public class IBMGraphClient {
         }
     }
 
+    public Schema getSchema() throws Exception {
+        String url = this.apiURL + "/schema";
+        JSONObject jsonContent = this.doHttpGet(url);
+        JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+        if (data.length() > 0) {
+            return Schema.fromJSONObject(data.getJSONObject(0));
+        }
+        return null;
+    }
+
+    public Schema saveSchema(Schema schema) throws Exception {
+        String url = this.apiURL + "/schema";
+        JSONObject jsonContent = this.doHttpPost(schema, url);
+        JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+        if (data.length() > 0) {
+            return Schema.fromJSONObject(data.getJSONObject(0));
+        }
+        return null;
+    }
+
+    public boolean deleteIndex(String indexName) throws Exception {
+        String url = this.apiURL + "/index/" + indexName;
+        JSONObject jsonContent = this.doHttpDelete(url);
+        return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
+    }
+
     public Vertex addVertex(Vertex vertex) throws Exception {
         String url = this.apiURL + "/vertices";
-        JSONObject jsonContent = this.post(new JSONObject(vertex), url);
+        JSONObject jsonContent = this.doHttpPost(vertex, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         if (data.length() > 0) {
             return Vertex.fromJSONObject(data.getJSONObject(0));
@@ -94,7 +118,7 @@ public class IBMGraphClient {
 
     public Edge addEdge(Edge edge) throws Exception {
         String url = this.apiURL + "/edges";
-        JSONObject jsonContent = this.post(new JSONObject(edge), url);
+        JSONObject jsonContent = this.doHttpPost(edge, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         if (data.length() > 0) {
             return Edge.fromJSONObject(data.getJSONObject(0));
@@ -104,18 +128,16 @@ public class IBMGraphClient {
 
     public boolean deleteVertex(Object id) throws Exception {
         String url = this.apiURL + "/vertices/" + id;
-        JSONObject jsonContent = this.delete(url);
+        JSONObject jsonContent = this.doHttpDelete(url);
         return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
     }
 
     public Element[] runGremlinQuery(String query) throws Exception {
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
+        System.out.println("Running Gremlin Query: " + query);
         String url = this.apiURL + "/gremlin";
         JSONObject postData = new JSONObject();
         postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
-        JSONObject jsonContent = this.post(postData, url);
+        JSONObject jsonContent = this.doHttpPost(postData, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         List<Element> elements = new ArrayList<Element>();
         if (data.length() > 0) {
@@ -125,32 +147,60 @@ public class IBMGraphClient {
         }
         return elements.toArray(new Element[0]);
     }
+    
+    // HTTP Helper Methods
 
-    private JSONObject post(JSONObject json, String url) throws Exception {
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Authorization", this.gdsTokenAuth);
-        httpPost.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        CloseableHttpResponse httpResponse = null;
-        try {
-            httpResponse = httpclient.execute(httpPost);
-            HttpEntity httpEntity = httpResponse.getEntity();
-            String content = EntityUtils.toString(httpEntity);
-            EntityUtils.consume(httpEntity);
-            return new JSONObject(content);
+    private JSONObject doHttpGet(String url) throws Exception {
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
         }
-        finally {
-            httpResponse.close();
-        }
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setHeader("Authorization", this.gdsTokenAuth);
+        httpGet.setHeader("Accept", "application/json");
+        return doHttpRequest(httpGet);
     }
 
-    private JSONObject delete(String url) throws Exception {
+    private JSONObject doHttpPost(JSONObject json, String url) throws Exception {
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Authorization", this.gdsTokenAuth);
+        httpPost.setHeader("Content-Type", "application/json");
+        httpPost.setHeader("Accept", "application/json");
+        System.out.println(json.toString());
+        httpPost.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
+        return doHttpRequest(httpPost);
+    }
+
+    private JSONObject doHttpPut(JSONObject json, String url) throws Exception {
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
+        HttpPut httpPut = new HttpPut(url);
+        httpPut.setHeader("Authorization", this.gdsTokenAuth);
+        httpPut.setHeader("Content-Type", "application/json");
+        httpPut.setHeader("Accept", "application/json");
+        System.out.println(json.toString());
+        httpPut.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
+        return doHttpRequest(httpPut);
+    }
+
+    private JSONObject doHttpDelete(String url) throws Exception {
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
         HttpDelete httpDelete = new HttpDelete(url);
         httpDelete.setHeader("Authorization", this.gdsTokenAuth);
+        httpDelete.setHeader("Accept", "application/json");
+        return doHttpRequest(httpDelete);
+    }
+
+    private JSONObject doHttpRequest(HttpUriRequest request) throws Exception {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
         try {
-            httpResponse = httpclient.execute(httpDelete);
+            httpResponse = httpclient.execute(request);
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);

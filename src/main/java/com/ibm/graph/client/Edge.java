@@ -34,7 +34,7 @@ public class Edge extends Entity {
         this.put("inV", this.inV);
     }
 
-    protected static Edge fromJSONObject(JSONObject json) throws Exception {
+    public static Edge fromJSONObject(JSONObject json) throws Exception {
         Edge edge = new Edge(
             json.getString("label"),
             json.get("outV"),

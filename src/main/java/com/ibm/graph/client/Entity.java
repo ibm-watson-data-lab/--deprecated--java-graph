@@ -26,7 +26,7 @@ public class Entity extends Element {
         }
     }
 
-    protected static Entity fromJSONObject(JSONObject json) throws Exception {
+    public static Entity fromJSONObject(JSONObject json) throws Exception {
         if (json.getString("type").toLowerCase().equals("edge")) {
             return Edge.fromJSONObject(json);
         }

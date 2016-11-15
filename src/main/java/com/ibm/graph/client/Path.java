@@ -21,7 +21,7 @@ public class Path extends Element {
         this.put("objects", this.objects);
     }
 
-    protected static Path fromJSONObject(JSONObject json) throws Exception {
+    public static Path fromJSONObject(JSONObject json) throws Exception {
         JSONArray labelArray = json.getJSONArray("labels");
         List<String[]> labels = new ArrayList<String[]>();
         if (labelArray.length() > 0) {

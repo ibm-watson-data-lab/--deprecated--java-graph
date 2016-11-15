@@ -17,7 +17,7 @@ public class Vertex extends Entity {
         super(label, properties);
     }
 
-    protected static Vertex fromJSONObject(JSONObject json) throws Exception {
+    public static Vertex fromJSONObject(JSONObject json) throws Exception {
         Vertex vertex = new Vertex(
             json.getString("label"),
             json.optJSONObject("properties")

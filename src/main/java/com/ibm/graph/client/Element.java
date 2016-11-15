@@ -8,7 +8,7 @@ import org.apache.wink.json4j.JSONObject;
  */
 public class Element extends JSONObject {
 
-    protected static Element fromJSONObject(JSONObject json) throws Exception {
+    public static Element fromJSONObject(JSONObject json) throws Exception {
         if (json.isNull("objects")) {
             return Entity.fromJSONObject(json);
         }
