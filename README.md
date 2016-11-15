@@ -9,5 +9,7 @@ Currently the library supports:
  - Running Gremlin queries
  - Adding vertices and edges
  - Deleting vertices
+ - Creating/updating schema
+ - Deleting indexes
 
 Work in progress!
