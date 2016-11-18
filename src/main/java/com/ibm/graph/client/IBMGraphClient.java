@@ -84,6 +84,8 @@ public class IBMGraphClient {
         }
     }
 
+    // Schema and Indexes
+
     public Schema getSchema() throws Exception {
         String url = this.apiURL + "/schema";
         JSONObject jsonContent = this.doHttpGet(url);
@@ -110,6 +112,8 @@ public class IBMGraphClient {
         return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
     }
 
+    // Vertices
+
     public Vertex addVertex(Vertex vertex) throws Exception {
         String url = this.apiURL + "/vertices";
         JSONObject jsonContent = this.doHttpPost(vertex, url);
@@ -120,7 +124,7 @@ public class IBMGraphClient {
         return null;
     }
 
-    public Vertex updatedVertex(Vertex vertex) throws Exception {
+    public Vertex updateVertex(Vertex vertex) throws Exception {
         String url = this.apiURL + "/vertices/" + vertex.getId();
         JSONObject jsonContent = this.doHttpPut(vertex, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
@@ -129,6 +133,14 @@ public class IBMGraphClient {
         }
         return null;
     }
+
+    public boolean deleteVertex(Object id) throws Exception {
+        String url = this.apiURL + "/vertices/" + id;
+        JSONObject jsonContent = this.doHttpDelete(url);
+        return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
+    }
+
+    // Edges
 
     public Edge addEdge(Edge edge) throws Exception {
         String url = this.apiURL + "/edges";
@@ -150,11 +162,13 @@ public class IBMGraphClient {
         return null;
     }
 
-    public boolean deleteVertex(Object id) throws Exception {
-        String url = this.apiURL + "/vertices/" + id;
+    public boolean deleteEdge(Object id) throws Exception {
+        String url = this.apiURL + "/edges/" + id;
         JSONObject jsonContent = this.doHttpDelete(url);
         return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
     }
+
+    // Gremlin
 
     public Element[] runGremlinQuery(String query) throws Exception {
         if (logger.isDebugEnabled()) {
