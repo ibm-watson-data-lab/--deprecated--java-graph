@@ -120,9 +120,29 @@ public class IBMGraphClient {
         return null;
     }
 
+    public Vertex updatedVertex(Vertex vertex) throws Exception {
+        String url = this.apiURL + "/vertices/" + vertex.getId();
+        JSONObject jsonContent = this.doHttpPut(vertex, url);
+        JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+        if (data.length() > 0) {
+            return Vertex.fromJSONObject(data.getJSONObject(0));
+        }
+        return null;
+    }
+
     public Edge addEdge(Edge edge) throws Exception {
         String url = this.apiURL + "/edges";
         JSONObject jsonContent = this.doHttpPost(edge, url);
+        JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+        if (data.length() > 0) {
+            return Edge.fromJSONObject(data.getJSONObject(0));
+        }
+        return null;
+    }
+
+    public Edge updateEdge(Edge edge) throws Exception {
+        String url = this.apiURL + "/edges/" + edge.getId();
+        JSONObject jsonContent = this.doHttpPut(edge, url);
         JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
         if (data.length() > 0) {
             return Edge.fromJSONObject(data.getJSONObject(0));

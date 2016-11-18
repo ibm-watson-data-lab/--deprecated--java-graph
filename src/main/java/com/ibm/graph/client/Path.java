@@ -21,6 +21,14 @@ public class Path extends Element {
         this.put("objects", this.objects);
     }
 
+    public String[][] getLabels() {
+        return labels;
+    }
+
+    public Entity[] getObjects() {
+        return objects;
+    }
+
     public static Path fromJSONObject(JSONObject json) throws Exception {
         JSONArray labelArray = json.getJSONArray("labels");
         List<String[]> labels = new ArrayList<String[]>();

@@ -66,4 +66,12 @@ public class Entity extends Element {
             return o;
         }
     }
+
+    public void setPropertyValue(String name, Object value) throws Exception {
+        if (this.properties == null || this.properties.size() == 0) {
+            this.properties = new HashMap();
+            this.put("properties", this.properties);
+        }
+        this.properties.put(name, value);
+    }
 }
