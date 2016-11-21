@@ -21,7 +21,7 @@ import com.ibm.graph.client.schema.*;
 String apiURL = "https://ibmgraph-alpha.ng.bluemix.net/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/g";
 String username = "";
 String password = "";
-IBMGraphClient graphClient = new IBMGraphClient(apiURL, username, password)
+IBMGraphClient graphClient = new IBMGraphClient(apiURL, username, password);
 
 Schema schema = schema = new Schema(
     new PropertyKey[]{
@@ -39,7 +39,6 @@ Schema schema = schema = new Schema(
     new EdgeIndex[]{}
 );
 schema = graphClient.saveSchema(schema);
-
 
 Vertex vertex = new Vertex("person", new HashMap() {{
     put("name", "John");
