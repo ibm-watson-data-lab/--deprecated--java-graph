@@ -14,7 +14,7 @@ public class EdgeIndex extends EntityIndex {
     public static EdgeIndex fromJSONObject(JSONObject json) throws Exception {
         return new EdgeIndex(
                 json.getString("name"),
-                (String[])json.getJSONArray("dataType").toArray(new String[0]),
+                (String[])json.getJSONArray("propertyKeys").toArray(new String[0]),
                 json.getBoolean("composite"),
                 json.getBoolean("unique")
         );

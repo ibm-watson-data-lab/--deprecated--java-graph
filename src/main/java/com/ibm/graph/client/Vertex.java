@@ -19,10 +19,10 @@ public class Vertex extends Entity {
 
     public static Vertex fromJSONObject(JSONObject json) throws Exception {
         Vertex vertex = new Vertex(
-            json.getString("label"),
-            json.optJSONObject("properties")
+            json.getString("label")
         );
         vertex.setId(json.get("id"));
+        vertex.setProperties(json.optJSONObject("properties"));
         return vertex;
     }
 }

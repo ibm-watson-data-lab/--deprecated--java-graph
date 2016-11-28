@@ -34,19 +34,6 @@ public class Edge extends Entity {
         this.put("inV", this.inV);
     }
 
-    public static Edge fromJSONObject(JSONObject json) throws Exception {
-        Edge edge = new Edge(
-            json.getString("label"),
-            json.get("outV"),
-            json.get("inV"),
-            json.optJSONObject("properties")
-        );
-        edge.setId(json.get("id"));
-        edge.setOutVLabel(json.optString("outVLabel"));
-        edge.setInVLabel(json.optString("inVLabel"));
-        return edge;
-    }
-
     protected void setOutVLabel(String outVLabel) throws Exception {
         this.outVLabel = outVLabel;
         if (this.outVLabel != null) {
@@ -75,6 +62,19 @@ public class Edge extends Entity {
 
     public String getInVLabel() {
         return inVLabel;
+    }
+
+    public static Edge fromJSONObject(JSONObject json) throws Exception {
+        Edge edge = new Edge(
+                json.getString("label"),
+                json.get("outV"),
+                json.get("inV")
+        );
+        edge.setId(json.get("id"));
+        edge.setProperties(json.optJSONObject("properties"));
+        edge.setOutVLabel(json.optString("outVLabel"));
+        edge.setInVLabel(json.optString("inVLabel"));
+        return edge;
     }
 
 }

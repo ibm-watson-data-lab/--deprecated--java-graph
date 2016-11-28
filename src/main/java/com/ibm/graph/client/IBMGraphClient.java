@@ -55,6 +55,10 @@ public class IBMGraphClient {
         this.init();
     }
 
+    public void setGraph(String graphId) {
+        this.apiURL = String.format("%s/%s",this.baseURL,graphId);
+    }
+
     private void init() {
         this.basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
         this.baseURL = this.apiURL.substring(0, this.apiURL.lastIndexOf('/'));
@@ -82,6 +86,39 @@ public class IBMGraphClient {
             }
             catch(IOException ioe) {}
         }
+    }
+
+    // Graphs
+
+    public String[] getGraphs() throws Exception {
+        String url = this.baseURL + "/_graphs";
+        JSONObject jsonContent = this.doHttpGet(url);
+        JSONArray data = jsonContent.getJSONArray("graphs");
+        List<String> graphIds = new ArrayList<>();
+        if (data.length() > 0) {
+            for(int i=0; i<data.length(); i++) {
+                graphIds.add(data.getString(i));
+            }
+        }
+        return graphIds.toArray(new String[0]);
+    }
+
+    public String createGraph() throws Exception {
+        return this.createGraph(null);
+    }
+
+    public String createGraph(String graphId) throws Exception {
+        String url = String.format("%s/_graphs",this.baseURL);
+        if (graphId != null && graphId.trim().length() > 0) {
+            url += String.format("/%s",graphId.trim());
+        }
+        JSONObject jsonContent = this.doHttpPost(null, url);
+        return jsonContent.getString("graphId");
+    }
+
+    public void deleteGraph(String graphId) throws Exception {
+        String url = String.format("%s/_graphs/%s",this.baseURL,graphId.trim());
+        this.doHttpDelete(url);
     }
 
     // Schema and Indexes
@@ -114,6 +151,25 @@ public class IBMGraphClient {
 
     // Vertices
 
+    public Vertex getVertex(Object id) throws Exception {
+        String url = String.format("%s/vertices/%s",this.apiURL,id);
+        JSONObject jsonContent = this.doHttpGet(url);
+        if (jsonContent.containsKey("result")) {
+            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+            if (data.length() > 0) {
+                return Vertex.fromJSONObject(data.getJSONObject(0));
+            }
+        }
+        else if (jsonContent.containsKey("code") && ! jsonContent.getString("code").equalsIgnoreCase("NotFoundError")) {
+            throw new Exception(jsonContent.getString("message"));
+        }
+        return null;
+    }
+
+    public Vertex addVertex() throws Exception {
+        return this.addVertex(null);
+    }
+
     public Vertex addVertex(Vertex vertex) throws Exception {
         String url = this.apiURL + "/vertices";
         JSONObject jsonContent = this.doHttpPost(vertex, url);
@@ -141,6 +197,21 @@ public class IBMGraphClient {
     }
 
     // Edges
+
+    public Edge getEdge(Object id) throws Exception {
+        String url = String.format("%s/edges/%s",this.apiURL,id);
+        JSONObject jsonContent = this.doHttpGet(url);
+        if (jsonContent.containsKey("result")) {
+            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
+            if (data.length() > 0) {
+                return Edge.fromJSONObject(data.getJSONObject(0));
+            }
+        }
+        else if (jsonContent.containsKey("code") && ! jsonContent.getString("code").equalsIgnoreCase("NotFoundError")) {
+            throw new Exception(jsonContent.getString("message"));
+        }
+        return null;
+    }
 
     public Edge addEdge(Edge edge) throws Exception {
         String url = this.apiURL + "/edges";
@@ -207,7 +278,7 @@ public class IBMGraphClient {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
-        String payload = json.toString();
+        String payload = (json == null ? "" : json.toString());
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Authorization", this.gdsTokenAuth);
         httpPost.setHeader("Content-Type", "application/json");
