@@ -16,7 +16,7 @@ public class EdgeTests {
     private static Logger logger =  LoggerFactory.getLogger(EdgeTests.class);
 
     @Test
-    public void createAndDeleteEdge() throws Exception {
+    public void createDeleteEdge() throws Exception {
         logger.info("Executing createAndDeleteEdge test.");
         // find jane and john doe
         // and create edge from jane doe to john doe
@@ -40,7 +40,7 @@ public class EdgeTests {
     }
 
     @Test
-    public void createAndUpdateEdge() throws Exception {
+    public void createUpdateEdge() throws Exception {
         logger.info("Executing createAndUpdateEdge test.");
         // find jane and john doe
         // create edge from john doe to jane doe

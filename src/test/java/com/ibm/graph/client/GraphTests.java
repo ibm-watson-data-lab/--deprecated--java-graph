@@ -1,6 +1,5 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.client.actions.CreateGraphAction;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,8 +70,7 @@ public class GraphTests {
         assertNotNull(graphIds);
         assertThat(Arrays.asList(graphIds), hasItems(graphId));
         // set the global graph id for the rest of the tests
-        // and add the create graph action, so that it can be deleted at the end of the tests
         TestSuite.setGlobalGraphId(graphId);
-//        TestSuite.addAction(new CreateGraphAction(graphId));
+        assertEquals(TestSuite.graphClient.getGraphId(), graphId);
     }
 }

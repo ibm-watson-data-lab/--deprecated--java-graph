@@ -10,7 +10,7 @@ public class EdgeLabel extends EntityLabel {
     private String multiplicity;
 
     public EdgeLabel(String name) throws Exception {
-        super(name);
+        this(name, "SIMPLE");
     }
 
     public EdgeLabel(String name, String multiplicity) throws Exception {

@@ -16,15 +16,15 @@ public class VertexTests {
     private static Logger logger =  LoggerFactory.getLogger(VertexTests.class);
 
     @Test
-    public void createAndDeleteEmptyVertex() throws Exception {
-        logger.info("Executing createAndDeleteEmptyVertex test.");
+    public void createDeleteEmptyVertex() throws Exception {
+        logger.info("Executing createDeleteEmptyVertex test.");
         // create vertex
         Vertex addedVertex = TestSuite.graphClient.addVertex();
         assertNotNull(addedVertex);
         // query vertex
         Vertex vertex = TestSuite.graphClient.getVertex(addedVertex.getId());
         assertNotNull(vertex);
-        assertEquals(addedVertex.getId(),vertex.getId());
+        assertEquals(vertex.getId(),addedVertex.getId());
         // delete vertex
         boolean deleted = TestSuite.graphClient.deleteVertex(vertex.getId());
         assertTrue(deleted);
@@ -34,8 +34,8 @@ public class VertexTests {
     }
 
     @Test
-    public void createAndUpdateJohnDoeVertex() throws Exception {
-        logger.info("Executing createAndUpdateJohnDoeVertex test.");
+    public void createUpdateJohnDoeVertex() throws Exception {
+        logger.info("Executing createUpdateJohnDoeVertex test.");
         // create vertex
         Vertex originalVertex = new Vertex("person", new HashMap(){{
             put("name","John Doe");

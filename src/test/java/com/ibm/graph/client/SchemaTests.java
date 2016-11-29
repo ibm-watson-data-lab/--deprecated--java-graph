@@ -1,8 +1,6 @@
 package com.ibm.graph.client;
 
 import com.ibm.graph.client.schema.*;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +12,6 @@ public class SchemaTests {
 
     private static Logger logger =  LoggerFactory.getLogger(SchemaTests.class);
 
-
-    @BeforeClass
-    public static void setup() {
-    }
-
-    @AfterClass
-    public static void teardown() {
-    }
-
     @Test
     public void createSchema() throws Exception {
         logger.info("Executing createSchema test.");
@@ -30,7 +19,7 @@ public class SchemaTests {
         Schema schema = TestSuite.graphClient.getSchema();
         boolean schemaExists = (schema != null && schema.getPropertyKeys() != null && schema.getPropertyKeys().length > 0);
         assertFalse(schemaExists);
-        // crete new schema
+        // create new schema
         schema = new Schema(
                 new PropertyKey[]{
                         new PropertyKey("name", "String", "SINGLE"),

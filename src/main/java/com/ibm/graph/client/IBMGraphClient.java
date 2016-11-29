@@ -28,8 +28,8 @@ public class IBMGraphClient {
     private String username;
     private String password;
     private String baseURL;
-    private String basicAuthHeader;
     private String gdsTokenAuth;
+    private String graphId;
 
     private static Logger logger =  LoggerFactory.getLogger(IBMGraphClient.class);
 
@@ -55,21 +55,18 @@ public class IBMGraphClient {
         this.init();
     }
 
-    public void setGraph(String graphId) {
-        this.apiURL = String.format("%s/%s",this.baseURL,graphId);
-    }
-
     private void init() {
-        this.basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
         this.baseURL = this.apiURL.substring(0, this.apiURL.lastIndexOf('/'));
+        this.graphId = this.apiURL.substring(this.apiURL.lastIndexOf('/') + 1);
     }
 
     private void initSession() throws Exception {
         if (this.baseURL == null) {
             throw new RuntimeException("Invalid configuration. Please specify a valid apiURL, username, and password.");
         }
+        String basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
         HttpGet httpGet = new HttpGet(this.baseURL + "/_session");
-        httpGet.setHeader("Authorization", this.basicAuthHeader);
+        httpGet.setHeader("Authorization", basicAuthHeader);
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
         try {
@@ -89,6 +86,15 @@ public class IBMGraphClient {
     }
 
     // Graphs
+
+    public String getGraphId() {
+        return this.graphId;
+    }
+
+    public void setGraph(String graphId) {
+        this.graphId = graphId;
+        this.apiURL = String.format("%s/%s",this.baseURL,this.graphId);
+    }
 
     public String[] getGraphs() throws Exception {
         String url = this.baseURL + "/_graphs";

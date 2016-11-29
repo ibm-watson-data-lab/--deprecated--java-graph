@@ -9,7 +9,7 @@ Use with caution!
 Currently the library supports:
  
  - Running Gremlin queries
- - Adding/deleteing graphs
+ - Adding/deleting graphs
  - Adding/updating/deleting vertices
  - Adding/updating/deleting edges
  - Creating/updating schema
