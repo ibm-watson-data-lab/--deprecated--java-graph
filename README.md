@@ -15,7 +15,32 @@ Currently the library supports:
  - Creating/updating schema
  - Deleting indexes
 
-# How to Run
+# How to build 
+
+```
+$ git clone https://github.com/ibm-cds-labs/java-graph.git
+$ cd java-graph
+$ mvn clean install -Dmaven.test.skip=true
+```
+> Source code and javadoc are located in the `target` directory.
+
+# How to test 
+
+```
+$ git clone https://github.com/ibm-cds-labs/java-graph.git
+$ cd java-graph
+$ cf create-service "IBM Graph" Standard ibm-graph-test
+$ cf create-service-key ibm-graph-sample Credentials-1
+$ cf service-key ibm-graph-test Credentials-1
+$ export TEST_API_URL=<apiURL from Credentials-1>
+$ export TEST_USERNAME=<username from Credentials-1>
+$ export TEST_PASSWORD=<password from Credentials-1>
+$ mvn clean install
+```
+
+> Source code and javadoc are located in the `target` directory.
+
+# How to consume
 
 ```
 import com.ibm.graph.client.*;
