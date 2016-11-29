@@ -29,27 +29,42 @@ public class TestSuite {
     @BeforeClass
     public static void setup() {
         Map envs = System.getenv();
-        TestSuite.graphClient = new IBMGraphClient(
-                envs.get("TEST_API_URL").toString(),
-                envs.get("TEST_USERNAME").toString(),
-                envs.get("TEST_PASSWORD").toString()
-        );
+        try {
+           TestSuite.graphClient = new IBMGraphClient(
+                                                        envs.get("TEST_API_URL").toString(),
+                                                        envs.get("TEST_USERNAME").toString(),
+                                                        envs.get("TEST_PASSWORD").toString());
+        }
+        catch(Exception ex) {
+            logger.error("Error creating IBMGraphClient", ex);   
+            TestSuite.graphClient = null;
+        }
     }
 
     @AfterClass
     public static void teardown() {
-        try {
-            logger.debug(String.format("Deleting graph with ID %s",graphId));
-            TestSuite.graphClient.deleteGraph(graphId);
+        if(TestSuite.graphClient != null) {
+           try {
+                logger.debug(String.format("Deleting graph with ID %s",graphId));
+                TestSuite.graphClient.deleteGraph(graphId);
+            }
+            catch(Exception ex) {
+                logger.error("Error deleting graph " + graphId + ": ", ex);
+            }
+            TestSuite.graphClient = null;
         }
-        catch(Exception ex) {
-            logger.error("Error deleting graph", ex);
-        }
-        TestSuite.graphClient = null;
     }
 
     public static void setGlobalGraphId(String graphId) {
-        TestSuite.graphClient.setGraph(graphId);
-        TestSuite.graphId = graphId;
+        if(TestSuite.graphClient != null) {
+           try {
+            TestSuite.graphClient.setGraph(graphId);
+            TestSuite.graphId = graphId;
+           }
+           catch(Exception ex) {
+                logger.error("Error switching to graph " + graphId + ": " , ex);
+           }
+        }
+
     }
 }
