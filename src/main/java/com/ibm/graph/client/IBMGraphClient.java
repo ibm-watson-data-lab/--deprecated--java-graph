@@ -3,6 +3,7 @@ package com.ibm.graph.client;
 import com.ibm.graph.GraphException;
 import com.ibm.graph.client.GraphClientException;
 import com.ibm.graph.client.schema.Schema;
+import com.ibm.graph.ResultSet;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpEntity;
@@ -575,6 +576,7 @@ public class IBMGraphClient {
      * @param query the traversal to be performed
      * @return Element[] TBD
      * @throws GraphException if an error occurred
+     * @deprecated use traverseGraph
      */
     public Element[] runGremlinQuery(String query) throws GraphException {
         if(query == null) {
@@ -604,6 +606,33 @@ public class IBMGraphClient {
         }
     }
     
+    /**
+     * Runs the specified Gremlin traversal
+     * @param query the traversal to be performed
+     * @return ResultSet the result of the graph traversal
+     * @throws GraphException if an error occurred
+     */
+    public ResultSet traverseGraph(String query) throws GraphException {
+        if(query == null) {
+            return null;
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Running Gremlin Query: " + query);
+        }
+        try {
+            String url = this.apiURL + "/gremlin";
+            JSONObject postData = new JSONObject();
+            postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
+            JSONObject jsonContent = this.doHttpPost(postData, url);
+            return new ResultSet(jsonContent);
+        }
+        catch(Exception ex) {
+            logger.error("Error processing gremlin query " + query + ": ", ex);
+            throw new GraphException("Error processing gremlin query " + query + ": " + ex.getMessage());               
+        }
+    }
+
+
     /*
      * ----------------------------------------------------------------
      * HTTP helper methods

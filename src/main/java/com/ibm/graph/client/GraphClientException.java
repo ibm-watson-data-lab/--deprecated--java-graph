@@ -6,7 +6,20 @@ package com.ibm.graph.client;
  */
 public class GraphClientException extends Exception {
 
+	/**
+	 * Constructor
+	 * @param message text
+	 **/
     public GraphClientException(String message) {
         super(message);
+    }
+
+	/**
+	 * Constructor
+	 * @param message text
+	 * @param cause root cause
+	 **/
+    public GraphClientException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
