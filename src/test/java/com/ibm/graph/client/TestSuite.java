@@ -29,6 +29,12 @@ public class TestSuite {
     @BeforeClass
     public static void setup() {
         Map envs = System.getenv();
+
+        if((envs.get("TEST_API_URL") == null) || (envs.get("TEST_USERNAME") == null) || (envs.get("TEST_PASSWORD") == null)) {
+            System.out.println("JUnit test aborted. Environment variables TEST_API_URL, TEST_USERNAME and TEST_PASSWORD must be set");
+            System.exit(1);
+        }
+
         try {
            TestSuite.graphClient = new IBMGraphClient(
                                                         envs.get("TEST_API_URL").toString(),

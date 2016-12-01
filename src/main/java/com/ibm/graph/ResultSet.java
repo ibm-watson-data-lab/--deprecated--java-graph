@@ -4,6 +4,9 @@ import com.ibm.graph.client.GraphClientException;
 import com.ibm.graph.client.Edge;
 import com.ibm.graph.client.Vertex;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.wink.json4j.JSONException;
@@ -20,16 +23,27 @@ public class ResultSet {
 	/**
 	 * Constructor
 	 * @param response a JSONObject containing the IBM Graph response
+	 * @throws GraphClientException if the IBM Graph response could not be processed
 	 */
 	public ResultSet(JSONObject response) throws GraphClientException {
 
-		if(response != null) {
+		if(response != null) {		
 			try {
-				this.requestId = response.getString("requestId");
+				if(response.has("requestId")) {
+					this.requestId = response.getString("requestId");
+				}
 				// extract status information
 				if(response.has("status")) {
 					this.statusMessage = response.getJSONObject("status").getString("message");
 					this.statusCode = response.getJSONObject("status").getString("code");
+				}
+				else {
+					// fallback: status information can also be returned as follows:
+					// sample IBM Graph response: {"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
+					if(response.has("message"))
+						this.statusMessage = response.getString("message");
+					if(response.has("code"))
+						this.statusCode = response.getString("code");					
 				}
 				if(response.has("result")) {
 					this.data = response.getJSONObject("result").getJSONArray("data");
@@ -39,7 +53,7 @@ public class ResultSet {
 				}
 			}
 			catch(Exception ex) {
-				throw new GraphClientException("The IBM Graph response could not be parsed: " + ex.getMessage(), ex);
+				throw new GraphClientException("The IBM Graph response " + response.toString() + " could not be parsed: " + ex.getMessage(), ex);
 			}			
 		}
 	}
@@ -105,6 +119,14 @@ public class ResultSet {
 	};
 
 	/**
+	 * Returns a result iterator 
+	 * @return Iterator JSONObject iterator for the results
+	 */
+	public Iterator<JSONObject> getJSONObjectResultIterator() {
+		return this.data.iterator();
+	};
+
+	/**
 	 * Returns the index-th result from the result set as a com.ibm.graph.client.Vertex object or null if the result cannot be converted
 	 * @param index a number between 0 (first result) and (getResultCount() - 1)
 	 * @return Vertex the index-th result from the result set
@@ -125,13 +147,30 @@ public class ResultSet {
 	};
 
 	/**
+	 * Attempts to interpret each result as an com.ibm.graph.client.Vertex and returns an iterator.
+	 * @return Iterator Vertex iterator
+	 */
+	public Iterator<Vertex> getVertexResultIterator() {
+		ArrayList<Vertex> vertices = new ArrayList<Vertex>();
+		for(int i = 0; i < this.data.length(); i++) {
+			try {
+				vertices.add(Vertex.fromJSONObject(this.data.getJSONObject(i)));
+			}
+			catch(Exception ex) {
+				vertices.add(null);
+			}			
+		}
+		return vertices.iterator();
+	};
+
+	/**
 	 * Returns the index-th result from the result set as a com.ibm.graph.client.Edge or null if the result cannot be converted
 	 * @param index a number between 0 (first result) and (getResultCount() - 1)
 	 * @return Edge the index-th result from the result set
 	 * @throws IndexOutOfBoundsException if index is not valid for this result set
 	 */
 	public Edge getResultAsEdge(int index) throws IndexOutOfBoundsException {
-		if((this.data != null) && (index >= 0) && (index <= this.data.length() - 1)) {
+		if((index >= 0) && (index <= this.data.length() - 1)) {
 			try {
 				return Edge.fromJSONObject(this.data.getJSONObject(index));
 			}
@@ -142,6 +181,23 @@ public class ResultSet {
 		else {
 			throw new IndexOutOfBoundsException();
 		}
+	};
+
+	/**
+	 * Attempts to interpret each result as an com.ibm.graph.client.Edge and returns an iterator.
+	 * @return Iterator Edge iterator
+	 */
+	public Iterator<Edge> getEdgeResultIterator() {
+		ArrayList<Edge> edges = new ArrayList<Edge>();
+		for(int i = 0; i < this.data.length(); i++) {
+			try {
+				edges.add(Edge.fromJSONObject(this.data.getJSONObject(i)));
+			}
+			catch(Exception ex) {
+				edges.add(null);
+			}			
+		}
+		return edges.iterator();
 	};
 
 	/**
@@ -162,6 +218,44 @@ public class ResultSet {
 		else {
 			throw new IndexOutOfBoundsException();
 		}
+	};
+
+	/**
+	 * Returns the index-th result from the result set as a Boolean or null if the result cannot be converted
+	 * @param index a number between 0 (first result) and (getResultCount() - 1)
+	 * @return Boolean the index-th result from the result set
+	 * @throws IndexOutOfBoundsException if index is not valid for this result set
+	 */
+	public Boolean getResultAsBoolean(int index) throws IndexOutOfBoundsException {
+		if((index >= 0) && (index <= this.data.length() - 1)) {
+			try {
+				return new Boolean(this.data.getBoolean(index));
+			}
+			catch(JSONException jsonex) {
+				return null;
+			}
+		}
+		else {
+			throw new IndexOutOfBoundsException();
+		}
+	};
+
+
+	/**
+	 * Attempts to interpret each result as an String and returns an iterator.
+	 * @return Iterator String iterator
+	 */
+	public Iterator<String> getStringResultIterator() {
+		ArrayList<String> strings = new ArrayList<String>();
+		for(int i = 0; i < this.data.length(); i++) {
+			try {
+				strings.add(this.data.getString(i));
+			}
+			catch(Exception ex) {
+				strings.add(null);
+			}			
+		}
+		return strings.iterator();
 	};
 
 	/**

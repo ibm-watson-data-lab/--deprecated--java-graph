@@ -6,6 +6,10 @@ import com.ibm.graph.client.schema.Schema;
 import com.ibm.graph.ResultSet;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
@@ -20,8 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -452,29 +458,25 @@ public class IBMGraphClient {
      * @param id edge id
      * @return com.ibm.graph.client.Edge or null if no edge with the specified id exists
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException id is null        
      */
-    public Edge getEdge(Object id) throws GraphException {
+    public Edge getEdge(Object id) throws GraphException, IllegalArgumentException {
         if(id == null)
-            return null;
+            throw new IllegalArgumentException("id parameter is missing");
         try {
             String url = String.format("%s/edges/%s",this.apiURL,id);
-            JSONObject jsonContent = this.doHttpGet(url);
-            if (jsonContent.containsKey("result")) {
-                JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-                if (data.length() > 0) {
-                    return Edge.fromJSONObject(data.getJSONObject(0));
-                }
-                else {
-                    return null;
-                }
+            ResultSet rs = new ResultSet(this.doHttpGet(url));
+            if(rs.hasResults()) {
+                return rs.getResultAsEdge(0);
             }
             else {
-                if ((jsonContent.containsKey("code") && (jsonContent.getString("code").equalsIgnoreCase("NotFoundError")))) {
+                // check status to determine whether no result was returned because the edge was not found
+                if("NotFoundError".equalsIgnoreCase(rs.getStatusCode()))
                     return null;
-                }
-                else {
-                    throw new GraphException("Error fetching edge with id " + id + ": " + jsonContent.getString("message"));
-                }
+
+                // Notify caller that we cannnot determine why the edge could not be retrieved; manual troubleshooting is required
+                logger.error("GET " + url + " result set info: " + rs.toString());
+                throw new GraphException("GET " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }
         }
         catch(GraphException gex) {
@@ -491,19 +493,22 @@ public class IBMGraphClient {
      * @param edge the edge to be added
      * @return Vertex the vertex object, as returned by IBM Graph
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException edge is null     
      */
-    public Edge addEdge(Edge edge) throws GraphException {
+    public Edge addEdge(Edge edge) throws GraphException, IllegalArgumentException {
         if(edge == null)
-            return null;
+            throw new IllegalArgumentException("edge parameter is missing");
         try {
             String url = this.apiURL + "/edges";
-            JSONObject jsonContent = this.doHttpPost(edge, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Edge.fromJSONObject(data.getJSONObject(0));
+            ResultSet rs = new ResultSet(this.doHttpPost(edge, url));
+            // if the edge was successfully created it can be accessed as the first result in the result set
+            if(rs.hasResults()) {
+                return rs.getResultAsEdge(0);
             }
             else {
-                throw new GraphException("Error adding edge: " + jsonContent.getString("message"));
+                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
+                logger.error("POST " + url + " result set info: " + rs.toString());
+                throw new GraphException("POST " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }            
         }
         catch(GraphException gex) {
@@ -520,20 +525,25 @@ public class IBMGraphClient {
      * @param edge the edge to be updated
      * @return Edge the edgex object, as returned by IBM Graph, or null
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException edge is null     
      */
-    public Edge updateEdge(Edge edge) throws GraphException {
+    public Edge updateEdge(Edge edge) throws GraphException, IllegalArgumentException {
        if(edge == null)
-            return null;
+            throw new IllegalArgumentException("edge parameter is missing");
+       if(edge.getId() == null)
+            throw new IllegalArgumentException("edge parameter is missing");
         try {
             String url = this.apiURL + "/edges/" + edge.getId();
-            JSONObject jsonContent = this.doHttpPut(edge, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Edge.fromJSONObject(data.getJSONObject(0));
+            ResultSet rs = new ResultSet(this.doHttpPut(edge, url));
+            // if the edge was successfully updated it can be accessed as the first result in the result set
+            if(rs.hasResults()) {
+                return rs.getResultAsEdge(0);
             }
             else {
-                throw new GraphException("Error updating edge: " + jsonContent.getString("message"));
-            }
+                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
+                logger.error("PUT " + url + " result set info: " + rs.toString());
+                throw new GraphException("PUT " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
+            }    
         }
         catch(GraphException gex) {
             throw gex;
@@ -549,14 +559,18 @@ public class IBMGraphClient {
      * @param id id of the edge to be removed
      * @return true if the edge with the specified id was removed
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException id is null
      */
-    public boolean deleteEdge(Object id) throws GraphException {
+    public boolean deleteEdge(Object id) throws GraphException, IllegalArgumentException {
         if(id == null)
-            return false;
+            throw new IllegalArgumentException("id parameter is missing"); 
         try {
             String url = this.apiURL + "/edges/" + id;
-            JSONObject jsonContent = this.doHttpDelete(url);
-            return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
+            ResultSet rs = new ResultSet(this.doHttpDelete(url));
+            if(rs.hasResults()) {
+                return rs.getResultAsBoolean(0).booleanValue();
+            }
+            return false;
         }
         catch(Exception ex) {
             logger.error("Error deleting edge with id " + id + ": ", ex);
@@ -566,69 +580,142 @@ public class IBMGraphClient {
 
     /*
      * ----------------------------------------------------------------
-     * Gremlin methods:
-     *  - runGremlinQuery
+     * Bulk load methods
+     *  - loadGraphSON
+     *  - loadGraphSONfromFile
+     *  TODO
+     *  - loadGraphML
+     *  - loadGraphMLfromFile
      * ----------------------------------------------------------------     
      */
 
     /**
-     * Runs the specified Gremlin traversal
-     * @param query the traversal to be performed
-     * @return Element[] TBD
+     * Loads graphSON into the graph
+     * @param graphson data to be loaded
+     * @return boolean true if the data was loaded
+     * @throws GraphClientException if an error occurred
      * @throws GraphException if an error occurred
-     * @deprecated use traverseGraph
+     * @throws IllegalArgumentException if graphson is an empty String or exceeds 10MB
      */
-    public Element[] runGremlinQuery(String query) throws GraphException {
-        if(query == null) {
-            Element[] NO_RESULT = {};
-            return NO_RESULT;
+    public boolean loadGraphSON(String graphson) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((graphson == null) || (graphson.trim().length() == 0)){
+            throw new IllegalArgumentException("graphson parameter is missing or empty.");
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Running Gremlin Query: " + query);
+        if(graphson.length() > 10485760) { // (10 * 1024 * 1024)
+            throw new IllegalArgumentException("graphson parameter value exceeds maximum length (10MB).");
+        }
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
         }
         try {
-            String url = this.apiURL + "/gremlin";
-            JSONObject postData = new JSONObject();
-            postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
-            JSONObject jsonContent = this.doHttpPost(postData, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            List<Element> elements = new ArrayList<Element>();
-            if (data.length() > 0) {
-                for (int i = 0 ; i < data.length(); i++) {
-                    elements.add(Element.fromJSONObject(data.getJSONObject(i)));
-                }
+            String url = this.apiURL + "/bulkload/graphson/";
+            HttpPost httpPost = new HttpPost(url);
+            httpPost.setHeader("Authorization", this.gdsTokenAuth);
+            httpPost.setHeader("Accept", "application/json");
+            MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+            meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            meb.addPart("graphson", new StringBody(graphson,ContentType.MULTIPART_FORM_DATA));
+            httpPost.setEntity(meb.build());
+
+            // TODO debug request parameters
+            // if (logger.isDebugEnabled()) {
+            //    logger.debug(String.format("Making HTTP POST request to %s; payload=%s", httpPost.toString()));
+            //}
+
+            ResultSet rs = new ResultSet(doHttpRequest(httpPost));
+            if("200".equals(rs.getStatusCode()) && (rs.hasResults()) && ("true".equals(rs.getResultAsString(0)))) {
+                return true;
             }
-            return elements.toArray(new Element[0]);
+            return false;
         }
         catch(Exception ex) {
-            logger.error("Error processing gremlin query " + query + ": ", ex);
-            throw new GraphException("Error processing gremlin query " + query + ": " + ex.getMessage());               
+            logger.error("Error loading graphSON into graph: ", ex);
+            throw new GraphException("Error loading graphSON into graph: " + ex.getMessage());          
+        }  
+    } 
+
+    /**
+     * Loads graphSON from filename into the graph
+     * @param filename file containing graphSON
+     * @return boolean true if the data was loaded
+     * @throws GraphClientException if an error occurred
+     * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException if filename does not identify a valid file (exists, is readable and less than 10MB in size)
+     */
+    public boolean loadGraphSONfromFile(String filename) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((filename == null) || (filename.trim().length() == 0)){
+            throw new IllegalArgumentException("filename parameter is missing or empty.");
         }
-    }
+        File graphsonFile = new File(filename);
+        if(! graphsonFile.canRead()) {
+            throw new IllegalArgumentException("File " + filename + " was not found or cannot be read.");
+        }
+        if(graphsonFile.length() > 10485760) { // (10 * 1024 * 1024)
+            throw new IllegalArgumentException("File " + filename + " is larger than 10MB and can therefore not be processed.");
+        }
+
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
+        try {
+            String url = this.apiURL + "/bulkload/graphson/";
+
+            HttpPost httpPost = new HttpPost(url);
+            httpPost.setHeader("Authorization", this.gdsTokenAuth);
+            httpPost.setHeader("Accept", "application/json");
+            FileBody fb = new FileBody(graphsonFile);
+            MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+            meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            meb.addPart("graphson", fb);
+            httpPost.setEntity(meb.build());
+
+            // TODO debug request parameters
+            // if (logger.isDebugEnabled()) {
+            //    logger.debug(String.format("Making HTTP POST request to %s; payload=%s", httpPost.toString()));
+            //}
+
+            ResultSet rs = new ResultSet(doHttpRequest(httpPost));
+            if("200".equals(rs.getStatusCode()) && (rs.hasResults()) && ("true".equals(rs.getResultAsString(0)))) {
+                return true;
+            }
+            return false;
+        }
+        catch(Exception ex) {
+            logger.error("Error loading graphSON into graph: ", ex);
+            throw new GraphException("Error loading graphSON into graph: " + ex.getMessage());          
+        }  
+    } 
+
+    /*
+     * ----------------------------------------------------------------
+     * Gremlin methods:
+     *  - executeGremlin
+     * ----------------------------------------------------------------     
+     */
     
     /**
-     * Runs the specified Gremlin traversal
-     * @param query the traversal to be performed
+     * Runs the specified Gremlin 
+     * @param gremlin the traversal to be performed
      * @return ResultSet the result of the graph traversal
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException gremlin is null or an empty string
      */
-    public ResultSet traverseGraph(String query) throws GraphException {
-        if(query == null) {
-            return null;
+    public ResultSet executeGremlin(String gremlin) throws GraphException, IllegalArgumentException {
+        if((gremlin == null) || (gremlin.trim().length() == 0)) {
+            throw new IllegalArgumentException("gremlin parameter is null or empty.");
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Running Gremlin Query: " + query);
+            logger.debug("Running Gremlin: " + gremlin);
         }
         try {
             String url = this.apiURL + "/gremlin";
             JSONObject postData = new JSONObject();
-            postData.put("gremlin", String.format("def g = graph.traversal(); %s",query));
-            JSONObject jsonContent = this.doHttpPost(postData, url);
-            return new ResultSet(jsonContent);
+            postData.put("gremlin", String.format("def g = graph.traversal(); %s",gremlin));
+            return new ResultSet(this.doHttpPost(postData, url));
         }
         catch(Exception ex) {
-            logger.error("Error processing gremlin query " + query + ": ", ex);
-            throw new GraphException("Error processing gremlin query " + query + ": " + ex.getMessage());               
+            logger.error("Error processing gremlin " + gremlin + ": ", ex);
+            throw new GraphException("Error processing gremlin " + gremlin + ": " + ex.getMessage());               
         }
     }
 
@@ -640,6 +727,7 @@ public class IBMGraphClient {
      *  - doHttpPost
      *  - doHttpPut
      *  - doHttpDelete
+     *  - doHttpRequest
      * ----------------------------------------------------------------     
      */
 
@@ -701,6 +789,11 @@ public class IBMGraphClient {
         return doHttpRequest(httpDelete);
     }
 
+    /**
+     * Executes an HTTP request.
+     * @param request the request to be executed
+     * @throws GraphException if a fatal processing error was encountered 
+     **/
     private JSONObject doHttpRequest(HttpUriRequest request) throws GraphException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
@@ -709,11 +802,39 @@ public class IBMGraphClient {
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);
+
+                System.out.println(String.format("Response received from %s = %s %s %s",
+                                           request.getURI(), 
+                                           httpResponse.getStatusLine().getStatusCode(), 
+                                           httpResponse.getStatusLine().getReasonPhrase(), 
+                                           content));    
+
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Response received from %s = %s",request.getURI(),content));
-            
+                // display <status code> <status message> <body>
+                // display 200 OK Hello World 
+                logger.debug(String.format("Response received from %s = %s %s %s",                    
+                                           request.getURI(), 
+                                           httpResponse.getStatusLine().getStatusCode(), 
+                                           httpResponse.getStatusLine().getReasonPhrase(), 
+                                           content));            
             }
-            return new JSONObject(content);
+            JSONObject response = null;
+            try {
+                response = new JSONObject(content);
+            }
+            catch(JSONException ex) {
+                // the server's response is not valid JSON (typically if fatal errors are encountered)
+                // create default JSON data structure:
+                // "status" : { 
+                //              "code": <HTTP_CODE>
+                //              "message": <BODY_OF_RESPONSE>
+                //            }
+                HashMap<String, String> status = new HashMap();
+                status.put("code", String.valueOf(httpResponse.getStatusLine().getStatusCode()));
+                status.put("message", content);
+                response = new JSONObject().put("status", status);
+            }
+            return response;
         }
         catch(Exception ex) {
             logger.error("Error processing HTTP request ", ex);            
