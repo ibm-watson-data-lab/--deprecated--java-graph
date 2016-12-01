@@ -48,15 +48,6 @@ public class Edge extends Entity {
         this.put("inV", this.inV);
     }
 
-    // TODO remove?
-    private Edge(String id, String label, Object outV, Object inV, HashMap properties) throws Exception {
-        super(label, properties);
-        this.outV = outV;
-        this.inV = inV;
-        this.put("outV", this.outV);
-        this.put("inV", this.inV);
-    }
-
     protected void setOutVLabel(String outVLabel) throws Exception {
         this.outVLabel = outVLabel;
         if (this.outVLabel != null) {

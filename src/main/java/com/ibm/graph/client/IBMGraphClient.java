@@ -534,6 +534,7 @@ public class IBMGraphClient {
             throw new IllegalArgumentException("edge parameter is missing");
         try {
             String url = this.apiURL + "/edges/" + edge.getId();
+            edge.remove("id"); // TODO
             ResultSet rs = new ResultSet(this.doHttpPut(edge, url));
             // if the edge was successfully updated it can be accessed as the first result in the result set
             if(rs.hasResults()) {
@@ -803,21 +804,13 @@ public class IBMGraphClient {
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);
 
-                System.out.println(String.format("Response received from %s = %s %s %s",
-                                           request.getURI(), 
-                                           httpResponse.getStatusLine().getStatusCode(), 
-                                           httpResponse.getStatusLine().getReasonPhrase(), 
-                                           content));    
-
-            if (logger.isDebugEnabled()) {
-                // display <status code> <status message> <body>
-                // display 200 OK Hello World 
-                logger.debug(String.format("Response received from %s = %s %s %s",                    
-                                           request.getURI(), 
-                                           httpResponse.getStatusLine().getStatusCode(), 
-                                           httpResponse.getStatusLine().getReasonPhrase(), 
-                                           content));            
-            }
+            // display <status code> <status message> <body>
+            // display 200 OK Hello World 
+            logger.debug(String.format("Response received from %s = %s %s %s",                    
+                                       request.getURI(), 
+                                       httpResponse.getStatusLine().getStatusCode(), 
+                                       httpResponse.getStatusLine().getReasonPhrase(), 
+                                       content));            
             JSONObject response = null;
             try {
                 response = new JSONObject(content);

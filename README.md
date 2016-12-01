@@ -17,14 +17,7 @@ Currently the library supports:
 
 # How to build 
 
-```
-$ git clone https://github.com/ibm-cds-labs/java-graph.git
-$ cd java-graph
-$ mvn clean install -Dmaven.test.skip=true
-```
-> Source code and javadoc are located in the `target` directory.
-
-# How to test 
+To build and unit test the library
 
 ```
 $ git clone https://github.com/ibm-cds-labs/java-graph.git
@@ -39,6 +32,31 @@ $ mvn clean install
 ```
 
 > Source code and javadoc are located in the `target` directory.
+
+To build the library and skip the JUNIT test
+
+```
+$ git clone https://github.com/ibm-cds-labs/java-graph.git
+$ cd java-graph
+$ mvn clean install -Dmaven.test.skip=true
+```
+
+# How to test 
+
+To run the JUnit tests
+
+```
+$ git clone https://github.com/ibm-cds-labs/java-graph.git
+$ cd java-graph
+$ cf create-service "IBM Graph" Standard ibm-graph-test
+$ cf create-service-key ibm-graph-sample Credentials-1
+$ cf service-key ibm-graph-test Credentials-1
+$ export TEST_API_URL=<apiURL from Credentials-1>
+$ export TEST_USERNAME=<username from Credentials-1>
+$ export TEST_PASSWORD=<password from Credentials-1>
+$ mvn clean test
+```
+> Edit `/src/test/resources/simplelogger.properties` and follow the instructions to enable DEBUG output.
 
 # How to consume
 

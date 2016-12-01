@@ -109,7 +109,7 @@ public class EdgeTests {
         assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));
     }
 
-  @Test
+    @Test
     public void addEdgeErrorHandling() throws Exception {
         logger.info("Executing addEdge error handling test.");
         // parameter checking
@@ -253,12 +253,8 @@ public class EdgeTests {
         assertNotNull(v2);
 
         // create a new edge between the vertices
-        Edge e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId()));
+        Edge e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId(), new HashMap(){{put("since", "last week");}}));
         assertNotNull(e1);
-
-System.out.println("***");
-System.out.println(e1.toString());        
-System.out.println("***");
 
         // add a new property to the edge
         e1.setPropertyValue("how much", "very much");

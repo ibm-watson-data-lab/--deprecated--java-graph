@@ -31,9 +31,16 @@ public class TestSuite {
         Map envs = System.getenv();
 
         if((envs.get("TEST_API_URL") == null) || (envs.get("TEST_USERNAME") == null) || (envs.get("TEST_PASSWORD") == null)) {
-            System.out.println("JUnit test aborted. Environment variables TEST_API_URL, TEST_USERNAME and TEST_PASSWORD must be set");
+            logger.error("JUnit test aborted. Environment variables TEST_API_URL, TEST_USERNAME and TEST_PASSWORD must be set");
             System.exit(1);
         }
+
+        logger.info("******************************************************************************************************************");
+        if(logger.isDebugEnabled()) 
+            logger.info("DEBUG is enabled. To disable it, edit /src/test/resources/simplelogger.properties and follow the instructions.");
+        else 
+            logger.info("DEBUG is disabled. To enable it, edit /src/test/resources/simplelogger.properties and follow the instructions.");
+        logger.info("******************************************************************************************************************");
 
         try {
            TestSuite.graphClient = new IBMGraphClient(
