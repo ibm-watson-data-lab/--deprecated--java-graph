@@ -11,30 +11,37 @@ import java.util.HashMap;
  */
 public class Entity extends Element {
 
-    private Object id;
-    private String label;
-    private HashMap properties;
+    private Object id = null;
+    private String label = null;
+    private HashMap properties = null;
 
     public Entity(String label) throws Exception {
         this(label, null);
     }
 
     public Entity(String label, HashMap properties) throws Exception {
+        this.id = null;
         this.label = label;
-        this.properties = properties;
-        this.put("label", this.label);
-        if (this.properties != null && this.properties.size() > 0) {
-            this.put("properties", this.properties);
+        if(properties != null)
+            this.properties = properties;
+        else {
+            this.properties = new HashMap();
         }
+        if(this.label != null)       
+            this.put("label", this.label);
+        if (this.properties.size() > 0) 
+            this.put("properties", this.properties);
     }
 
     protected void setId(Object id) throws Exception {
         this.id = id;
-        this.put("id", this.id);
+        if(id  != null)
+            this.put("id", this.id);
+        else
+            this.remove("id");
     }
 
     protected void setProperties(JSONObject jsonProperties) throws Exception {
-        this.properties = new HashMap();
         if (jsonProperties != null) {
             for(Object key : jsonProperties.keySet()) {
                 String name = key.toString();
@@ -52,7 +59,8 @@ public class Entity extends Element {
                 this.setPropertyValue(name, value, false);
             }
         }
-        this.put("properties", this.properties);
+        if (this.properties.size() > 0) 
+            this.put("properties", this.properties);
     }
 
     public Object getId() {
@@ -63,17 +71,19 @@ public class Entity extends Element {
         return label;
     }
 
+    /**
+     * Returns the properties of this entity or null if no properties are defined
+     *  @return properties of this entity
+     */
     public HashMap getProperties() {
-        return properties;
+        if (this.properties.size() > 0)
+            return this.properties;
+        else 
+            return null;
     }
 
     public Object getPropertyValue(String propertyName) throws Exception {
-        if (this.properties != null) {
-            return this.properties.get(propertyName);
-        }
-        else {
-            return null;
-        }
+        return this.properties.get(propertyName);
     }
 
     public void setPropertyValue(String name, Object value) throws Exception {
@@ -81,10 +91,11 @@ public class Entity extends Element {
     }
 
     private void setPropertyValue(String name, Object value, boolean updateJsonObject) throws Exception {
-        if (this.properties == null) {
-            this.properties = new HashMap();
-        }
-        this.properties.put(name, value);
+        if(value != null)
+            this.properties.put(name, value);
+        else
+            this.properties.remove(name);
+
         if (updateJsonObject) {
             this.put("properties", this.properties);
         }

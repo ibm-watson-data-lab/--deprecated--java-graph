@@ -15,7 +15,7 @@ public class VertexTests {
 
     private static Logger logger =  LoggerFactory.getLogger(VertexTests.class);
 
-    @Test
+/*    @Test
     public void createDeleteEmptyVertex() throws Exception {
         logger.info("Executing createDeleteEmptyVertex test.");
         // create vertex
@@ -31,6 +31,38 @@ public class VertexTests {
         // make sure vertex is gone
         vertex = TestSuite.graphClient.getVertex(vertex.getId());
         assertNull(vertex);
+    }
+*/
+
+    @Test
+    public void createVertex() throws Exception {
+        logger.info("Executing vertex constructor test.");
+        Vertex vwl = new Vertex("mylabel");
+        assertEquals("mylabel", vwl.getLabel());
+        assertNull(vwl.getProperties());
+        assertNull(vwl.getId());
+        assertNull(vwl.getPropertyValue("notdefined"));
+        vwl.setPropertyValue("key", "value");
+        assertEquals("value", vwl.getPropertyValue("key"));
+        assertNull(vwl.getPropertyValue(null));
+        vwl = null;
+        Vertex vwlaeh = new Vertex("mylabel", new HashMap());
+        assertEquals("mylabel", vwlaeh.getLabel());
+        assertNull(vwlaeh.getId());        
+        assertNull(vwlaeh.getProperties());
+        assertNull(vwlaeh.getPropertyValue("notdefined"));
+        vwlaeh = null;
+        Vertex vwlah = new Vertex("mylabel", new HashMap(){{put("a","b");}});
+        assertEquals("mylabel", vwlah.getLabel());
+        assertNull(vwlah.getId());        
+        assertNotNull(vwlah.getProperties());
+        vwlah.setPropertyValue("key", "value");
+        assertEquals("value", vwlah.getPropertyValue("key"));
+        assertEquals("b", vwlah.getPropertyValue("a"));
+        vwlah = null;
+
+        // TODO Vertex.fromJSONObject
+ 
     }
 
     @Test
