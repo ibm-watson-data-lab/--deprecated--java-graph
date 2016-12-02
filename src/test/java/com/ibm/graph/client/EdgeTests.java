@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.HashMap;
@@ -24,11 +25,24 @@ public class EdgeTests {
     public void testEdgeClass() throws Exception {
         logger.info("Executing testEdgeClass test.");
         Edge e1 = null;
+        String e1_label = "e1_edgelabel";
         try {
-            e1 = new Edge("label", 1, 2);
+            e1 = new Edge(e1_label, 1, 2);
+            assertNotNull(e1);
+            assertNull(e1.getId());
+            assertEquals(e1_label, e1.getLabel());
+            assertEquals(1, e1.getOutV());
+            assertEquals(2, e1.getInV());
+            assertNull(e1.getProperties());
+            assertNull(e1.getPropertyValue("notdefined"));
+            e1.setPropertyValue("property1", "value1");
+            e1.setPropertyValue("property2", false);
+            assertEquals("value1", e1.getPropertyValue("property1"));
+            assertEquals(false, e1.getPropertyValue("property2"));
         }
         catch(Exception ex) {
-            assertFalse("new Edge(\"label\", 1, 2): " + ex.getMessage(), true);
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Edge(\""+ e1_label + "\", 1, 2) - unexpected exception: " + ex.getMessage(), true);
         }
         assertNotNull(e1);
         e1 = null;
@@ -43,13 +57,62 @@ public class EdgeTests {
         e1 = null;
 
         try {
-            e1 = new Edge("label", 1, 2, new HashMap());
+            e1 = new Edge(e1_label, 1, 2, new HashMap(){{put("property1", "value1");}});
+            assertNotNull(e1);
+            assertNull(e1.getId());
+            assertEquals(e1_label, e1.getLabel());
+            assertEquals(1, e1.getOutV());
+            assertEquals(2, e1.getInV());
+            assertNotNull(e1.getProperties());
+            assertEquals("value1", e1.getPropertyValue("property1"));
+            e1.setPropertyValue("property1", "value2");
+            e1.setPropertyValue("property2", false);
+            assertEquals("value2", e1.getPropertyValue("property1"));
+            assertEquals(false, e1.getPropertyValue("property2"));
+
         }
         catch(Exception ex) {
-            assertFalse("new Edge(\"label\", 1, 2, new HashMap()): " + ex.getMessage(), true);
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Edge(\""+ e1_label + "\", 1, 2, new HashMap(){{put(\"property1\", \"value1\");}}) - unexpected exception: " + ex.getMessage(), true);
         }
-        assertNotNull(e1);
+        
         e1 = null;
+
+        // test static fromJSONObject method
+
+        JSONObject j1 = new JSONObject();
+        j1.put("label", "likes");   // required
+        j1.put("outV", 1);          // required
+        j1.put("inV", 2);           // required
+        e1 = Edge.fromJSONObject(j1);
+        assertNotNull(e1);
+        assertEquals("likes", e1.getLabel());
+        assertEquals(1, e1.getOutV());
+        assertEquals(2, e1.getInV());
+        assertNull(e1.toString(), e1.getId());         // not set
+        assertNull(e1.toString(), e1.getProperties());   // not set
+        assertNull(e1.toString(), e1.getOutVLabel());  // not set
+        assertNull(e1.toString(), e1.getInVLabel());   // not set
+
+        j1 = new JSONObject();
+        j1.put("label", "likes");   // required
+        j1.put("outV", 1);          // required
+        j1.put("inV", 2);           // required
+        j1.put("outVLabel", "person"); // optional 
+        j1.put("inVLabel", "pet");     // optional
+        j1.put("id", "abc-def");       // optional
+        j1.put("properties", new HashMap(){{put("how much","a little");}});          // optional
+
+        e1 = Edge.fromJSONObject(j1);
+        assertNotNull(e1);
+        assertEquals("likes", e1.getLabel());
+        assertEquals(1, e1.getOutV());
+        assertEquals(2, e1.getInV());
+        assertEquals("abc-def", e1.getId());         
+        assertEquals("person", e1.getOutVLabel());         
+        assertEquals("pet", e1.getInVLabel()); 
+        assertEquals(1, e1.getProperties().size());  
+        assertEquals("a little", e1.getPropertyValue("how much"));
 
     }
 
@@ -252,17 +315,39 @@ public class EdgeTests {
         v2 = TestSuite.graphClient.addVertex(v2);
         assertNotNull(v2);
 
-        // create a new edge between the vertices
-        Edge e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId(), new HashMap(){{put("since", "last week");}}));
-        assertNotNull(e1);
+        Edge e1 = null;
 
-        // add a new property to the edge
-        e1.setPropertyValue("how much", "very much");
-
-        // should succeed
         try {
+            // create a new edge between the vertices
+            e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId(), new HashMap(){{put("since", "last week");}}));
+            assertNotNull(e1);
+            assertEquals("last week", e1.getPropertyValue("since"));
+            assertNull(e1.getPropertyValue("how much"));
+            assertEquals(1, e1.getProperties().size());
+
+            // add a new property to the edge
+            e1.setPropertyValue("how much", "very much");
             e1 = TestSuite.graphClient.updateEdge(e1);
             assertNotNull("TestSuite.graphClient.updateEdge(e1)", e1);
+            assertEquals("last week", e1.getPropertyValue("since"));
+            assertEquals("very much", e1.getPropertyValue("how much"));
+            assertEquals(2, e1.getProperties().size());
+
+            // update an existing property
+            e1.setPropertyValue("since", "last month");
+            e1 = TestSuite.graphClient.updateEdge(e1);
+            assertNotNull("TestSuite.graphClient.updateEdge(e1)", e1);
+            assertEquals("last month", e1.getPropertyValue("since"));
+            assertEquals("very much", e1.getPropertyValue("how much"));
+            assertEquals(2, e1.getProperties().size());
+
+            // remove all properties
+            e1.setPropertyValue("since", null);
+            e1.setPropertyValue("how much", null);
+            assertNull(e1.getProperties());
+            e1 = TestSuite.graphClient.updateEdge(e1);
+            assertNotNull("TestSuite.graphClient.updateEdge(e1)", e1);
+            assertNull(e1.getProperties());
         }
         catch(Exception ex) {
             // fail

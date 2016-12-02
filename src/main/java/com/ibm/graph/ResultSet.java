@@ -11,11 +11,14 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.wink.json4j.JSONException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ResultSet {
 
- // {"requestId":"7e2914a1-cf17-4571-9791-4411c15d5c96","status":{"message":"","code":200,"attributes":{}},"result":{"data":[{"id":4288,"label":"band","type":"vertex","properties":{"monthly_listeners":[{"id":"1zs-3b4-3yd","value":"192302"}],"name":[{"id":"17c-3b4-sl","value":"Declan McKenna"}],"genre":[{"id":"1lk-3b4-35x","value":"Folk"}]}}],"meta":{}}}	public ResultSet() {
+	private static Logger logger =  LoggerFactory.getLogger(ResultSet.class);		
 
-	private String requestId = null; // e.g. "7e2914a1-cf17-4571-9791-4411c15d5c96"
+	private String requestId = null; // e.g. "7e2914a1-cf17-4571-9791-4411c15d5c96" (optional)
 	private String statusMessage = null;
 	private String statusCode = null;
 	private JSONArray data = null;
@@ -24,38 +27,46 @@ public class ResultSet {
 	 * Constructor
 	 * @param response a JSONObject containing the IBM Graph response
 	 * @throws GraphClientException if the IBM Graph response could not be processed
+	 * @throws IllegalArgumentException if response is null
 	 */
-	public ResultSet(JSONObject response) throws GraphClientException {
+	public ResultSet(JSONObject response) throws GraphClientException, IllegalArgumentException {
+    	if(response == null)
+    		throw new IllegalArgumentException("response parameter is missing.");
 
-		if(response != null) {		
-			try {
-				if(response.has("requestId")) {
-					this.requestId = response.getString("requestId");
-				}
-				// extract status information
-				if(response.has("status")) {
-					this.statusMessage = response.getJSONObject("status").getString("message");
-					this.statusCode = response.getJSONObject("status").getString("code");
-				}
-				else {
-					// fallback: status information can also be returned as follows:
-					// sample IBM Graph response: {"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
-					if(response.has("message"))
-						this.statusMessage = response.getString("message");
-					if(response.has("code"))
-						this.statusCode = response.getString("code");					
-				}
-				if(response.has("result")) {
-					this.data = response.getJSONObject("result").getJSONArray("data");
-				}
-				else {
-					this.data = new JSONArray();
-				}
+    	logger.debug("Creating ResultSet for response: " + response.toString());
+
+		try {
+			if(response.has("requestId")) {
+				this.requestId = response.getString("requestId");
 			}
-			catch(Exception ex) {
-				throw new GraphClientException("The IBM Graph response " + response.toString() + " could not be parsed: " + ex.getMessage(), ex);
-			}			
+			// extract status information
+			if(response.has("status")) {
+				if(response.getJSONObject("status").has("message"))
+					this.statusMessage = response.getJSONObject("status").getString("message");
+				if(response.getJSONObject("status").has("code"))
+					this.statusCode = response.getJSONObject("status").getString("code");
+			}
+			else {
+				// fallback: status information can also be returned as follows:
+				// sample IBM Graph response: {"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
+				if(response.has("message"))
+					this.statusMessage = response.getString("message");
+				if(response.has("code"))
+					this.statusCode = response.getString("code");					
+			}
+			if(response.has("result")) {
+				this.data = response.getJSONObject("result").getJSONArray("data");
+			}
+			else {
+				this.data = new JSONArray();
+			}
+
+			logger.debug("Created ResultSet for response: " + this.toString());
+
 		}
+		catch(Exception ex) {
+			throw new GraphClientException("The IBM Graph response " + response.toString() + " could not be parsed: " + ex.getMessage(), ex);
+		}			
 	}
 
 	/**

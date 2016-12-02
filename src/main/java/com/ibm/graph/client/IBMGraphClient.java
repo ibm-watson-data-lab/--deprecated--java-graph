@@ -154,8 +154,13 @@ public class IBMGraphClient {
      * Switches to the graph identified by graphId.
      * @param graphId name of the graph on which the client will operate on
      * @throws GraphException if no graph with the specified graphId exists
+     * @throws GraphClientException if the client encountered a fatal error
+     * @throws IllegalArgumentException if graphId is null or empty
      */
-    public void setGraph(String graphId) throws GraphException {
+    public void setGraph(String graphId) throws GraphException, GraphClientException, IllegalArgumentException {
+
+        if((graphId == null) || (graphId.trim().length() == 0))
+            throw new IllegalArgumentException("Parameter graphId is null or empty.");
 
         if(ArrayUtils.contains(getGraphs(), graphId)) {
             this.graphId = graphId;
@@ -170,21 +175,35 @@ public class IBMGraphClient {
      * Returns list of graphs that are defined in this IBM Graph service instance
      * @return An array of strings, identifying graphs that can be switched to.
      * @throws GraphException if the graph list cannot be retrieved
+     * @throws GraphClientException if the client encountered a fatal error
      * @see com.ibm.graph.client.IBMGraphClient#setGraph
      */
-    public String[] getGraphs() throws GraphException {
+    public String[] getGraphs() throws GraphException, GraphClientException {
 
         try {
             String url = this.baseURL + "/_graphs";
             JSONObject jsonContent = this.doHttpGet(url);
-            JSONArray data = jsonContent.getJSONArray("graphs");
-            List<String> graphIds = new ArrayList<>();
-            if (data.length() > 0) {
-                for(int i=0; i<data.length(); i++) {
-                    graphIds.add(data.getString(i));
+            // sample success response (doesn't follow "standard") - can't use ResultSet
+            // {"graphs":["1...3","1","g","zzz"]}
+            if(jsonContent.has("graphs")) {
+                JSONArray data = jsonContent.getJSONArray("graphs");    
+                List<String> graphIds = new ArrayList<>();
+                if (data.length() > 0) {
+                    for(int i=0; i<data.length(); i++) {
+                        graphIds.add(data.getString(i));
+                    }
                 }
+                return graphIds.toArray(new String[0]);
             }
-            return graphIds.toArray(new String[0]);
+            else{
+                // the response cannot be interpreted; raise error
+                // code changes are required
+                logger.debug("Unknown IBM Graph response for GET /_graphs API call: " + jsonContent.toString());
+                throw new GraphClientException("Unexpected response for GET /_graphs API call: " + jsonContent.toString());  
+            }
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(Exception ex) {
             logger.error("Error getting list of graphs: ", ex);
@@ -196,41 +215,85 @@ public class IBMGraphClient {
      * Creates a new graph with a unique id.
      * @return The graph id
      * @throws GraphException if the graph cannot be created
+     * @throws GraphClientException if the client encountered a fatal error
      */
-    public String createGraph() throws GraphException {
+    public String createGraph() throws GraphException, GraphClientException {
         return this.createGraph(null);
     }
 
     /**
-     * Creates a new graph identified by the specified graphId.
+     * Creates a new graph identified by the specified graphId. If no graphId is provided, a unique id will be 
      * @param graphId unique graph id
      * @return The assigned graph id
      * @throws GraphException if the graph cannot be created
+     * @throws GraphClientException if the client encountered a fatal error
      */
-    public String createGraph(String graphId) throws GraphException {
+    public String createGraph(String graphId) throws GraphException, GraphClientException {
         try {
             String url = String.format("%s/_graphs",this.baseURL);
             if (graphId != null && graphId.trim().length() > 0) {
                 url += String.format("/%s",graphId.trim());
             }
             JSONObject jsonContent = this.doHttpPost(null, url);
-            return jsonContent.getString("graphId");
+            // sample success response (doesn't follow "standard") - can't use ResultSet            
+            // response: {"graphId":"1...3","dbUrl":"https://...3"}
+            if(jsonContent.has("graphId"))
+                return jsonContent.getString("graphId");
+
+            // the response cannot be interpreted; raise error
+            // code changes are required
+            logger.debug("Unknown IBM Graph response for POST /_graphs API call: " + jsonContent.toString());
+            throw new GraphClientException("Unexpected response for POST /_graphs API call: " + jsonContent.toString());               
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(Exception ex) {
             logger.error("Error creating graph: ", ex);
-            throw new GraphException("Error creating graph: " + ex.getMessage());               
+            throw new GraphException("An exception was caught trying to create a graph:" + ex.getMessage(), ex);               
         }
     }
 
     /**
      * Deletes the graph identified by graphId.
      * @param graphId id of the graph to be deleted
+     * @return boolean true if the graph was deleted, false if it couldn't be found
      * @throws GraphException if the specified graph cannot be deleted
-     * @throws GraphClientException if the specified graph cannot be deleted because of a configuration issue
+     * @throws GraphClientException if the client encountered a fatal error
+     * @throws IllegalArgumentException if graphId is null or empty     
      */
-    public void deleteGraph(String graphId) throws GraphClientException, GraphException {
-        String url = String.format("%s/_graphs/%s",this.baseURL,graphId.trim());
-        this.doHttpDelete(url);
+    public boolean deleteGraph(String graphId) throws GraphClientException, GraphException, IllegalArgumentException {
+
+        if((graphId == null) || (graphId.trim().length() == 0))
+            throw new IllegalArgumentException("Parameter graphId is null or empty.");
+
+        try {
+            String url = String.format("%s/_graphs/%s",this.baseURL,graphId.trim());
+            JSONObject jsonContent = this.doHttpDelete(url);
+            // sample success response (doesn't follow "standard") - can't use ResultSet            
+            // {"data":{}}
+            if(jsonContent.has("data")) {
+                return true;
+            } else {
+                // sample failure reponse (doesn't follow "standard") - can't use ResultSet            
+                // {"code":"NotFoundError","message":"graph not found"}
+                if(jsonContent.has("code") && ("NotFoundError".equalsIgnoreCase(jsonContent.getString("code"))))
+                    return false;
+                else {
+                    // the response cannot be interpreted; raise error
+                    // code changes are required
+                    logger.debug("Uexpected IBM Graph response for DELETE /_graphs/:graphId API call: " + jsonContent.toString());
+                    throw new GraphClientException("Unexpected IBM Graph response for DELETE /_graphs/:graphId API call: " + jsonContent.toString()); 
+                }
+            }
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(Exception ex) {
+            logger.error("Error deleting graph: ", ex);
+            throw new GraphException("An exception was caught trying to delete a graph:" + ex.getMessage(), ex);               
+        }
     }
 
     /*
@@ -491,7 +554,7 @@ public class IBMGraphClient {
     /**
      * Adds an edge to the current graph.
      * @param edge the edge to be added
-     * @return Vertex the vertex object, as returned by IBM Graph
+     * @return Edge the edge object, as returned by IBM Graph
      * @throws GraphException if an error occurred
      * @throws IllegalArgumentException edge is null     
      */
@@ -507,7 +570,7 @@ public class IBMGraphClient {
             }
             else {
                 // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
-                logger.error("POST " + url + " result set info: " + rs.toString());
+                logger.debug("POST " + url + " result set info: " + rs.toString());
                 throw new GraphException("POST " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }            
         }
@@ -521,7 +584,7 @@ public class IBMGraphClient {
     }
 
     /**
-     * Updates an edge in the current graph.
+     * Updates the properties of an existing edge in the current graph. The incident vertices and edge label cannot be changed.
      * @param edge the edge to be updated
      * @return Edge the edgex object, as returned by IBM Graph, or null
      * @throws GraphException if an error occurred
@@ -531,18 +594,20 @@ public class IBMGraphClient {
        if(edge == null)
             throw new IllegalArgumentException("edge parameter is missing");
        if(edge.getId() == null)
-            throw new IllegalArgumentException("edge parameter is missing");
+            throw new IllegalArgumentException("edge parameter does not contain the id property");
         try {
             String url = this.apiURL + "/edges/" + edge.getId();
-            edge.remove("id"); // TODO
-            ResultSet rs = new ResultSet(this.doHttpPut(edge, url));
+            // create the payload         
+            JSONObject payload = new JSONObject();
+            payload.put("properties", edge.getProperties());
+            ResultSet rs = new ResultSet(this.doHttpPut(payload, url));
             // if the edge was successfully updated it can be accessed as the first result in the result set
             if(rs.hasResults()) {
                 return rs.getResultAsEdge(0);
             }
             else {
                 // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
-                logger.error("PUT " + url + " result set info: " + rs.toString());
+                logger.debug("PUT " + url + " result set info: " + rs.toString());
                 throw new GraphException("PUT " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }    
         }
@@ -574,7 +639,7 @@ public class IBMGraphClient {
             return false;
         }
         catch(Exception ex) {
-            logger.error("Error deleting edge with id " + id + ": ", ex);
+            logger.debug("Error deleting edge with id " + id + ": ", ex);
             throw new GraphException("Error deleting edge with id " + id + ": " + ex.getMessage());          
         }                
     }
@@ -591,7 +656,7 @@ public class IBMGraphClient {
      */
 
     /**
-     * Loads graphSON into the graph
+     * Loads graphSON string into the graph
      * @param graphson data to be loaded
      * @return boolean true if the data was loaded
      * @throws GraphClientException if an error occurred
@@ -739,9 +804,7 @@ public class IBMGraphClient {
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Authorization", this.gdsTokenAuth);
         httpGet.setHeader("Accept", "application/json");
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Making HTTP GET request to %s",url));
-        }
+        logger.debug(String.format("Making HTTP GET request to %s",url));
         return doHttpRequest(httpGet);
     }
 
@@ -755,9 +818,7 @@ public class IBMGraphClient {
         httpPost.setHeader("Content-Type", "application/json");
         httpPost.setHeader("Accept", "application/json");
         httpPost.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Making HTTP POST request to %s; payload=%s",url,payload));
-        }
+        logger.debug(String.format("Making HTTP POST request to %s; payload=%s",url,payload));
         return doHttpRequest(httpPost);
     }
 
@@ -771,9 +832,7 @@ public class IBMGraphClient {
         httpPut.setHeader("Content-Type", "application/json");
         httpPut.setHeader("Accept", "application/json");
         httpPut.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Making HTTP PUT request to %s; payload=%s",url,payload));
-        }
+        logger.debug(String.format("Making HTTP PUT request to %s; payload=%s",url,payload));
         return doHttpRequest(httpPut);
     }
 
@@ -784,9 +843,7 @@ public class IBMGraphClient {
         HttpDelete httpDelete = new HttpDelete(url);
         httpDelete.setHeader("Authorization", this.gdsTokenAuth);
         httpDelete.setHeader("Accept", "application/json");
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Making HTTP DELETE request to %s",url));
-        }
+        logger.debug(String.format("Making HTTP DELETE request to %s",url));
         return doHttpRequest(httpDelete);
     }
 

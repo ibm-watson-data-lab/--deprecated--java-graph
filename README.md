@@ -8,11 +8,11 @@ Use with caution!
 
 Currently the library supports:
  
- - Running Gremlin queries
- - Adding/deleting graphs
+ - Executing Gremlin queries
+ - Adding/switching/deleting graphs
  - Adding/updating/deleting vertices
  - Adding/updating/deleting edges
- - Creating/updating schema
+ - Creating/loading/updating schema
  - Deleting indexes
 
 # How to build 

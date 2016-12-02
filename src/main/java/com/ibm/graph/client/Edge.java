@@ -50,16 +50,18 @@ public class Edge extends Entity {
 
     protected void setOutVLabel(String outVLabel) throws Exception {
         this.outVLabel = outVLabel;
-        if (this.outVLabel != null) {
+        if (this.outVLabel != null) 
             this.put("outVLabel", this.outVLabel);
-        }
+        else 
+            this.remove("outVLabel");
     }
 
     protected void setInVLabel(String inVLabel) throws Exception {
         this.inVLabel = inVLabel;
-        if (this.inVLabel != null) {
+        if (this.inVLabel != null) 
             this.put("inVLabel", this.inVLabel);
-        }
+        else 
+            this.remove("inVLabel");
     }
 
     public Object getOutV() {
@@ -102,7 +104,7 @@ public class Edge extends Entity {
                 json.get("outV"),
                 json.get("inV")
         );
-        edge.setId(json.get("id"));
+        edge.setId(json.optString("id"));
         edge.setProperties(json.optJSONObject("properties"));
         edge.setOutVLabel(json.optString("outVLabel"));
         edge.setInVLabel(json.optString("inVLabel"));

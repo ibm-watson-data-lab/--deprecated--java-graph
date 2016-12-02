@@ -49,13 +49,13 @@ public class VertexTests {
         Vertex vwlaeh = new Vertex("mylabel", new HashMap());
         assertEquals("mylabel", vwlaeh.getLabel());
         assertNull(vwlaeh.getId());        
-        assertTrue(vwlaeh.getProperties().isEmpty());
+        assertNull(vwlaeh.getProperties());
         assertNull(vwlaeh.getPropertyValue("notdefined"));
         vwlaeh = null;
         Vertex vwlah = new Vertex("mylabel", new HashMap(){{put("a","b");}});
         assertEquals("mylabel", vwlah.getLabel());
         assertNull(vwlah.getId());        
-        assertFalse(vwlah.getProperties().isEmpty());
+        assertNotNull(vwlah.getProperties());
         vwlah.setPropertyValue("key", "value");
         assertEquals("value", vwlah.getPropertyValue("key"));
         assertEquals("b", vwlah.getPropertyValue("a"));
