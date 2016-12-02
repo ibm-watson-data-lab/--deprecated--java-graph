@@ -10,8 +10,8 @@ Currently the library supports:
  
  - Executing Gremlin queries
  - Adding/switching/deleting graphs
- - Adding/updating/deleting vertices
- - Adding/updating/deleting edges
+ - Adding/getting/updating/deleting vertices
+ - Adding/getting/updating/deleting edges
  - Creating/loading/updating schema
  - Deleting indexes
 

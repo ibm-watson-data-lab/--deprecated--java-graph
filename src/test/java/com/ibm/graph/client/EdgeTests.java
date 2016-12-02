@@ -113,7 +113,6 @@ public class EdgeTests {
         assertEquals("pet", e1.getInVLabel()); 
         assertEquals(1, e1.getProperties().size());  
         assertEquals("a little", e1.getPropertyValue("how much"));
-
     }
 
     @Test
@@ -148,11 +147,11 @@ public class EdgeTests {
         catch(IllegalArgumentException iaex) {
             // pass
         }
-
     }
 
    @Test
     public void addEdge() throws Exception {
+        logger.info("Executing graphClient.addEdge(...) test.");
         // create an edge between two vertices
         Vertex v1 = new Vertex("person");
         v1 = TestSuite.graphClient.addVertex(v1);
@@ -174,7 +173,7 @@ public class EdgeTests {
 
     @Test
     public void addEdgeErrorHandling() throws Exception {
-        logger.info("Executing addEdge error handling test.");
+        logger.info("Executing graphClient.addEdge(...) error handling test.");
         // parameter checking
         try {
             TestSuite.graphClient.addEdge(null);
@@ -252,7 +251,7 @@ public class EdgeTests {
 
     @Test
     public void getEdge() throws Exception {
-        logger.info("Executing getEdge test.");
+        logger.info("Executing graphClient.getEdge(...) test.");
         // create an edge between two vertices
         Vertex v1 = new Vertex("person");
         v1 = TestSuite.graphClient.addVertex(v1);
@@ -274,7 +273,7 @@ public class EdgeTests {
 
     @Test
     public void getEdgeErrorHandling() throws Exception {
-        logger.info("Executing getEdge error handling test.");
+        logger.info("Executing graphClient.getEdge(...) error handling test.");
 
         Edge e1 = null;
         try {
@@ -306,7 +305,7 @@ public class EdgeTests {
 
     @Test
     public void updateEdge() throws Exception {
-        logger.info("Executing updateEdge test.");
+        logger.info("Executing graphClient.updateEdge(...) test.");
         // create two vertices
         Vertex v1 = new Vertex("person");
         v1 = TestSuite.graphClient.addVertex(v1);
@@ -363,7 +362,7 @@ public class EdgeTests {
 
     @Test
     public void updateEdgeErrorHandling() throws Exception {
-        logger.info("Executing updateEdge error handling test.");
+        logger.info("Executing graphClient.updateEdge(...) error handling test.");
 
         Edge e1 = null;
         try {
@@ -394,12 +393,11 @@ public class EdgeTests {
             // fail
             assertFalse("TestSuite.graphClient.updateEdge(new Edge(\"label\", 1, 2)): unexpected exception: " + ex.getMessage(), true);   
         }
-
     }
 
-  @Test
+    @Test
     public void deleteEdge() throws Exception {
-        logger.info("Executing deleteEdge test.");
+        logger.info("Executing graphClient.deleteEdge(...) test.");
 
         // create two vertices
         Vertex v1 = new Vertex("person");
@@ -424,9 +422,9 @@ public class EdgeTests {
         assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));        
     }
 
-  @Test
+    @Test
     public void deleteEdgeErrorHandling() throws Exception {
-        logger.info("Executing deleteEdge error handling test.");
+        logger.info("Executing graphClient.deleteEdge(...) error handling test.");
         // parameter checking
         try {
             TestSuite.graphClient.deleteEdge(null);
@@ -442,11 +440,10 @@ public class EdgeTests {
 
         // delete a non-existing edge
         assertFalse("TestSuite.graphClient.deleteEdge(123456789)", TestSuite.graphClient.deleteEdge(123456789));
-  
     }
 
 
-   @Test
+    @Test
     public void createDeleteEdge() throws Exception {
         logger.info("Executing createAndDeleteEdge test.");
         // find jane and john doe
