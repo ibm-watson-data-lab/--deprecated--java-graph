@@ -89,7 +89,6 @@ public class Edge extends Entity {
      * @throws Exception if an error was encountered
      */
     public static Edge fromJSONObject(JSONObject json) throws Exception {
-
         if(json == null) 
             throw new IllegalArgumentException("Parameter json cannot be null");
         if(! json.has("label"))

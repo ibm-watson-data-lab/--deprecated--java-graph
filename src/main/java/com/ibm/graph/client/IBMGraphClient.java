@@ -395,28 +395,26 @@ public class IBMGraphClient {
      * @param id vertex id
      * @return com.ibm.graph.client.Vertex or null if no vertex with the specified id exists
      * @throws GraphException if an error (other than "not found") occurred
+     * @throws GraphClientException if an error (other than "not found") occurred     
+     * @throws IllegalArgumentException id is null 
      */
-    public Vertex getVertex(Object id) throws GraphException {
+    public Vertex getVertex(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
         if(id == null)
-            return null;
+            throw new IllegalArgumentException("id parameter is missing");
         try {
             String url = String.format("%s/vertices/%s",this.apiURL,id);
-            JSONObject jsonContent = this.doHttpGet(url);
-            if (jsonContent.containsKey("result")) {
-                JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-                if (data.length() > 0) {
-                    return Vertex.fromJSONObject(data.getJSONObject(0));
-                }
-                else {
-                    return null;
-                }
-            }
-            else if ((jsonContent.containsKey("code") && (jsonContent.getString("code").equalsIgnoreCase("NotFoundError")))) {
-                // vertex not found
-                return null;
+            ResultSet rs = new ResultSet(this.doHttpGet(url));
+            if(rs.hasResults()) {
+                return rs.getResultAsVertex(0);
             }
             else {
-                throw new GraphException("Error fetching vertex with id " + id + ": " + jsonContent.getString("message"));
+                // check status to determine whether no result was returned because the vertex was not found
+                if("NotFoundError".equalsIgnoreCase(rs.getStatusCode()))
+                    return null;
+
+                // Notify caller that we cannnot determine why the edge could not be retrieved; manual troubleshooting is required
+                logger.error("GET " + url + " result set info: " + rs.toString());
+                throw new GraphException("GET " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }
         }
         catch(GraphException gex) {
@@ -433,56 +431,66 @@ public class IBMGraphClient {
      * @param vertex the vertex to be added
      * @return Vertex the vertex object, as returned by IBM Graph, or null
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException vertex is null      
      */
-    public Vertex addVertex(Vertex vertex) throws GraphException {
+    public Vertex addVertex(Vertex vertex) throws GraphException, IllegalArgumentException {
         if(vertex == null)
-            return null;
+            throw new IllegalArgumentException("vertex parameter is missing");
         try {
             String url = this.apiURL + "/vertices";
-            JSONObject jsonContent = this.doHttpPost(vertex, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Vertex.fromJSONObject(data.getJSONObject(0));
+            ResultSet rs = new ResultSet(this.doHttpPost(vertex, url));
+            // if the vertex was successfully created it can be accessed as the first result in the result set
+            if(rs.hasResults()) {
+                return rs.getResultAsVertex(0);
             }
             else {
-                throw new GraphException("Error adding vertex: " + jsonContent.getString("message"));
-            }
+                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
+                logger.debug("POST " + url + " result set info: " + rs.toString());
+                throw new GraphException("POST " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
+            }            
         }
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error adding vertex: ", ex);
-            throw new GraphException("Error adding vertex: " + ex.getMessage());              
+            throw new GraphException("Error adding vertex: " + ex.getMessage(), ex);              
         }
     }
 
     /**
-     * Updates a vertex in the current graph.
+     * Updates existing vertex &lt;vertex&gt; by deleting previous properties and replacing them with properties specified as key-value pairs. Vertex labels and IDs are immutable.
      * @param vertex the vertex to be updated
      * @return Vertex the vertex object, as returned by IBM Graph, or null
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException vertex is null or does not contain an id  
      */
-    public Vertex updateVertex(Vertex vertex) throws GraphException {
+    public Vertex updateVertex(Vertex vertex) throws GraphException, IllegalArgumentException {
        if(vertex == null)
-            return null;
+            throw new IllegalArgumentException("vertex parameter is missing");            
+       if(vertex.getId() == null)
+            throw new IllegalArgumentException("vertex parameter does not contain the id property");
         try {
             String url = this.apiURL + "/vertices/" + vertex.getId();
-            JSONObject jsonContent = this.doHttpPut(vertex, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Vertex.fromJSONObject(data.getJSONObject(0));
+            // create the payload         
+            JSONObject payload = new JSONObject();
+            payload.put("properties", vertex.getProperties());
+            ResultSet rs = new ResultSet(this.doHttpPut(payload, url));
+            // if the vertex was successfully updated it can be accessed as the first result in the result set
+            if(rs.hasResults()) {
+                return rs.getResultAsVertex(0);
             }
             else {
-                throw new GraphException("Error updating vertex: " + jsonContent.getString("message"));
-            }
+                // Notify caller that we cannnot determine why the vertex information was not returned; manual troubleshooting is required
+                logger.debug("PUT " + url + " result set info: " + rs.toString());
+                throw new GraphException("PUT " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
+            }    
         }
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
             logger.error("Error updating vertex: ", ex);
-            throw new GraphException("Error updating vertex: " + ex.getMessage());              
+            throw new GraphException("Error updating vertex: " + ex.getMessage(), ex);              
         }
     }
 
@@ -491,19 +499,23 @@ public class IBMGraphClient {
      * @param id id of the vertex to be removed
      * @return true if the vertex with the specified id was removed
      * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException if id is null
      */
-    public boolean deleteVertex(Object id) throws GraphException {
+    public boolean deleteVertex(Object id) throws GraphException, IllegalArgumentException {
         if(id == null)
-            return false;
+            throw new IllegalArgumentException("id parameter is missing");
         try {
             String url = this.apiURL + "/vertices/" + id;
-            JSONObject jsonContent = this.doHttpDelete(url);
-            return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
+            ResultSet rs = new ResultSet(this.doHttpDelete(url));
+            if(rs.hasResults()) {
+                return rs.getResultAsBoolean(0).booleanValue();
+            }
+            return false;
         }
         catch(Exception ex) {
-            logger.error("Error deleting vertex with id " + id + ": ", ex);
+            logger.debug("Error deleting vertex with id " + id + ": ", ex);
             throw new GraphException("Error deleting vertex with id " + id + ": " + ex.getMessage());          
-        }        
+        }                
     }
 
     /*
@@ -521,7 +533,7 @@ public class IBMGraphClient {
      * @param id edge id
      * @return com.ibm.graph.client.Edge or null if no edge with the specified id exists
      * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException id is null        
+     * @throws IllegalArgumentException id is null 
      */
     public Edge getEdge(Object id) throws GraphException, IllegalArgumentException {
         if(id == null)
@@ -579,7 +591,7 @@ public class IBMGraphClient {
         }
         catch(Exception ex) {
             logger.error("Error adding edge: ", ex);
-            throw new GraphException("Error adding edge: " + ex.getMessage());              
+            throw new GraphException("Error adding edge: " + ex.getMessage(), ex);              
         }        
     }
 
@@ -616,7 +628,7 @@ public class IBMGraphClient {
         }
         catch(Exception ex) {
             logger.error("Error updating edge: ", ex);
-            throw new GraphException("Error updating edge: " + ex.getMessage());              
+            throw new GraphException("Error updating edge: " + ex.getMessage(), ex);              
         }
     }
 

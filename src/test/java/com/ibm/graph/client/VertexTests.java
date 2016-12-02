@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.wink.json4j.JSONObject;
+
 import static org.junit.Assert.*;
 
 /**
@@ -15,54 +18,386 @@ public class VertexTests {
 
     private static Logger logger =  LoggerFactory.getLogger(VertexTests.class);
 
-/*    @Test
-    public void createDeleteEmptyVertex() throws Exception {
-        logger.info("Executing createDeleteEmptyVertex test.");
-        // create vertex
-        Vertex addedVertex = TestSuite.graphClient.addVertex();
-        assertNotNull(addedVertex);
-        // query vertex
-        Vertex vertex = TestSuite.graphClient.getVertex(addedVertex.getId());
-        assertNotNull(vertex);
-        assertEquals(vertex.getId(),addedVertex.getId());
-        // delete vertex
-        boolean deleted = TestSuite.graphClient.deleteVertex(vertex.getId());
-        assertTrue(deleted);
-        // make sure vertex is gone
-        vertex = TestSuite.graphClient.getVertex(vertex.getId());
-        assertNull(vertex);
+   @Test
+    public void testVertexClass() throws Exception {
+        logger.info("Executing testVertexClass test.");
+        Vertex v1 = null;
+        String v1_label = "person";
+        try {
+            // create vertex without label
+            v1 = new Vertex();
+            assertNotNull(v1);
+            assertNull(v1.getId());         // not set
+            assertNull(v1.getLabel());      // not set
+            assertNull(v1.getProperties()); // not set
+            assertNull(v1.getPropertyValue("notdefined"));
+            v1.setPropertyValue("name", "John");
+            v1.setPropertyValue("age", 43);
+            assertEquals("John", v1.getPropertyValue("name"));
+            assertEquals(43, v1.getPropertyValue("age"));
+        }
+        catch(Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Vertex() - unexpected exception: " + ex.getMessage(), true);
+        }
+
+        v1 = null;
+
+        try {
+            // create vertex with label
+            v1 = new Vertex(v1_label);
+            assertNotNull(v1);
+            assertNull(v1.getId());         // not set
+            assertEquals(v1_label, v1.getLabel());      
+            assertNull(v1.getProperties()); // not set
+            assertNull(v1.getPropertyValue("notdefined"));
+            v1.setPropertyValue("name", "John");
+            v1.setPropertyValue("age", 43);
+            assertEquals("John", v1.getPropertyValue("name"));
+            assertEquals(43, v1.getPropertyValue("age"));
+        }
+        catch(Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Vertex(" + v1_label + ") - unexpected exception: " + ex.getMessage(), true);
+        }
+
+        v1 = null;
+
+        try {
+            // create vertex with label and properties
+            v1 = new Vertex(v1_label, new HashMap(){{put("name","John");}});
+            assertNotNull(v1);
+            assertNull(v1.getId());         // not set
+            assertEquals(v1_label, v1.getLabel());      
+            assertNotNull(v1.getProperties()); 
+            assertEquals("John", v1.getPropertyValue("name"));
+            v1.setPropertyValue("age", 43);
+            assertEquals("John", v1.getPropertyValue("name"));
+            assertEquals(43, v1.getPropertyValue("age"));
+            v1.setPropertyValue("age", 34);
+            assertEquals(34, v1.getPropertyValue("age"));
+        }
+        catch(Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Vertex(" + v1_label + ") - unexpected exception: " + ex.getMessage(), true);
+        }  
+
+        // test static fromJSONObject method
+
+        try {
+            JSONObject j1 = new JSONObject();
+            v1 = Vertex.fromJSONObject(j1);
+            assertNotNull(v1);
+            assertNull(v1.toString(), v1.getId());         // not set
+            assertNull(v1.toString(), v1.getProperties());   // not set
+            assertNull(v1.toString(), v1.getLabel());  // not set
+
+            j1 = null;
+            v1 = null;
+
+            j1 = new JSONObject();
+            j1.put("label", "person");
+            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            v1 = Vertex.fromJSONObject(j1);
+            assertNotNull(v1);
+            assertNull(v1.toString(), v1.getId());         // not set
+            assertEquals(v1.toString(), "person", v1.getLabel());  
+            assertNotNull(v1.toString(), v1.getProperties());  
+            assertEquals("Jane", v1.getPropertyValue("name"));
+            assertEquals(27, v1.getPropertyValue("age"));
+
+            j1 = null;
+            v1 = null;
+
+            j1 = new JSONObject();
+            j1.put("label", "person");
+            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            j1.put("id", "1");
+            v1 = Vertex.fromJSONObject(j1);
+            assertNotNull(v1);
+            assertEquals(v1.toString(), "1", v1.getId());  
+            assertEquals(v1.toString(), "person", v1.getLabel());  
+            assertNotNull(v1.toString(), v1.getProperties());  
+            assertEquals("Jane", v1.getPropertyValue("name"));
+            assertEquals(27, v1.getPropertyValue("age"));
+        }
+        catch(Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("new Vertex(" + v1_label + ") - unexpected exception: " + ex.getMessage(), true);
+        } 
     }
-*/
 
     @Test
-    public void createVertex() throws Exception {
-        logger.info("Executing vertex constructor test.");
-        Vertex vwl = new Vertex("mylabel");
-        assertEquals("mylabel", vwl.getLabel());
-        assertNull(vwl.getProperties());
-        assertNull(vwl.getId());
-        assertNull(vwl.getPropertyValue("notdefined"));
-        vwl.setPropertyValue("key", "value");
-        assertEquals("value", vwl.getPropertyValue("key"));
-        assertNull(vwl.getPropertyValue(null));
-        vwl = null;
-        Vertex vwlaeh = new Vertex("mylabel", new HashMap());
-        assertEquals("mylabel", vwlaeh.getLabel());
-        assertNull(vwlaeh.getId());        
-        assertNull(vwlaeh.getProperties());
-        assertNull(vwlaeh.getPropertyValue("notdefined"));
-        vwlaeh = null;
-        Vertex vwlah = new Vertex("mylabel", new HashMap(){{put("a","b");}});
-        assertEquals("mylabel", vwlah.getLabel());
-        assertNull(vwlah.getId());        
-        assertNotNull(vwlah.getProperties());
-        vwlah.setPropertyValue("key", "value");
-        assertEquals("value", vwlah.getPropertyValue("key"));
-        assertEquals("b", vwlah.getPropertyValue("a"));
-        vwlah = null;
+    public void testVertexClassErrorHandling() throws Exception {
+        logger.info("Executing testVertexClassErrorHandling test.");
+        Vertex v1 = null;
+        try {
+            v1 = Vertex.fromJSONObject(null);
+            assertFalse("Vertex.fromJSONObject(null)", true);
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass
+        }
+        catch(Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("Vertex.fromJSONObject(null) - unexpected exception: " + ex.getMessage(), true);
+        }        
+    }
 
-        // TODO Vertex.fromJSONObject
- 
+   @Test
+    public void addVertex() throws Exception {
+        logger.info("Executing graphClient.addVertex(...) test.");
+        Vertex v1 = null, v2 = null, v3 = null;
+        try {
+            v1 = new Vertex();
+            assertNotNull(v1);
+            v1 = TestSuite.graphClient.addVertex(v1);
+            assertNotNull(v1);
+            assertNotNull(v1.toString(), v1.getId());        
+            assertNull(v1.toString(), v1.getProperties());
+            assertEquals(v1.toString(), "vertex", v1.getLabel()); // default
+
+            v2 = new Vertex(null);
+            assertNotNull(v2);
+            v2 = TestSuite.graphClient.addVertex(v2);
+            assertNotNull(v2);
+            assertNotNull(v2.toString(), v2.getId());        
+            assertNull(v2.toString(), v2.getProperties());
+            assertEquals(v2.toString(), "vertex", v2.getLabel()); // default
+
+            v3 = new Vertex("person");
+            assertNotNull(v3);
+            v3.setPropertyValue("name", "Jill");
+            v3.setPropertyValue("age", 33);
+            v3 = TestSuite.graphClient.addVertex(v3);
+            assertNotNull(v3);
+            assertNotNull(v3.toString(), v3.getId());        
+            assertEquals(v3.toString(), "person", v3.getLabel());
+            assertNotNull(v3.toString(), v3.getProperties());
+            assertEquals(v3.toString(), "Jill", v3.getPropertyValue("name"));
+            assertEquals(v3.toString(), 33, v3.getPropertyValue("age"));
+            assertEquals(v3.toString(), 2, v3.getProperties().size());
+        }
+        catch(Exception ex) {
+            // fail
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("graphClient.addVertex(...) - unexpected exception: " + ex.getMessage(), true);
+        }         
+
+        // cleanup
+        assertTrue(TestSuite.graphClient.deleteVertex(v1.getId()));
+        assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));
+        assertTrue(TestSuite.graphClient.deleteVertex(v3.getId()));
+    }
+
+    @Test
+    public void addVertexErrorHandling() throws Exception {
+        logger.info("Executing graphClient.addVertex(...) error handling test.");
+        // parameter checking
+        try {
+            TestSuite.graphClient.addVertex(null);
+            assertTrue("graphClient.addVertex(null)", false); // fail
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass
+        }
+        catch(Exception ex) {
+            // fail
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            assertFalse("graphClient.addVertex(null) - unexpected exception: " + ex.getMessage(), true);
+        }
+    }
+
+    @Test
+    public void updateVertex() throws Exception {
+        logger.info("Executing graphClient.updateVertex(...) test.");
+        Vertex v = null;
+        try {
+            v = new Vertex("person");
+            assertNotNull(v);
+            v = TestSuite.graphClient.addVertex(v);
+            assertNotNull(v);
+            assertNotNull(v.toString(), v.getId());
+            assertEquals(v.toString(), "person", v.getLabel());
+            assertNull(v.toString(), v.getProperties());
+
+            v.setPropertyValue("name", "Jim");
+            v = TestSuite.graphClient.updateVertex(v);
+            assertNotNull(v);
+            assertEquals(v.toString(), "person", v.getLabel());
+            assertNotNull(v.toString(), v.getId());
+            assertEquals(v.toString(), 1, v.getProperties().size());
+            assertEquals(v.toString(), "Jim", v.getPropertyValue("name"));
+
+            v.setPropertyValue("age", 21);
+            v = TestSuite.graphClient.updateVertex(v);
+            assertNotNull(v);
+            assertEquals(v.toString(), "person", v.getLabel());
+            assertNotNull(v.toString(), v.getId());
+            assertEquals(v.toString(), 2, v.getProperties().size());
+            assertEquals(v.toString(), "Jim", v.getPropertyValue("name"));
+            assertEquals(v.toString(), 21, v.getPropertyValue("age"));
+
+            // cleanup
+            assertTrue(TestSuite.graphClient.deleteVertex(v.getId()));
+        }
+        catch(Exception ex) {
+            // fail
+            ex.printStackTrace();
+            assertFalse("TestSuite.graphClient.updateVertex(...): unexpected exception: " + ex.getMessage(), true);   
+        }
+    }
+
+    @Test
+    public void updateVertexErrorHandling() throws Exception {
+        logger.info("Executing graphClient.updateVertex(...) error handling test.");
+        try {
+            TestSuite.graphClient.updateVertex(null);
+            assertFalse("TestSuite.graphClient.updateVertex(null)", true);
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass (vertex is null)
+        }
+        catch(Exception ex) {
+            // fail
+            assertFalse("TestSuite.graphClient.updateVertex(null): unexpected exception: " + ex.getMessage(), true);   
+        }
+        try {
+            Vertex v = new Vertex();
+            TestSuite.graphClient.updateVertex(v);  
+            assertFalse("TestSuite.graphClient.updateVertex(v)", true);
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass (vertex is missing id property)
+        }
+        catch(Exception ex) {
+            // fail
+            assertFalse("TestSuite.graphClient.updateVertex(v): unexpected exception: " + ex.getMessage(), true);   
+        }      
+    }
+
+    @Test
+    public void deleteVertex() throws Exception {
+        logger.info("Executing graphClient.deleteVertex(...) test.");
+        Vertex v = null;
+        try {
+            v = new Vertex("person");
+            assertNotNull(v);
+            v = TestSuite.graphClient.addVertex(v);
+            assertNotNull(v);
+            assertNotNull(v.toString(), v.getId());
+            assertEquals(v.toString(), "person", v.getLabel());
+            assertNull(v.toString(), v.getProperties());
+
+            // cleanup
+            assertTrue(TestSuite.graphClient.deleteVertex(v.getId()));
+        }
+        catch(Exception ex) {
+            // fail
+            ex.printStackTrace();
+            assertFalse("TestSuite.graphClient.deleteVertex(...): unexpected exception: " + ex.getMessage(), true);   
+        }
+    }
+
+    @Test
+    public void deleteVertexErrorHandling() throws Exception {
+        logger.info("Executing graphClient.deleteVertex(...) error handling test.");
+        // parameter checking
+        try {
+            TestSuite.graphClient.deleteVertex(null);
+            assertFalse("TestSuite.graphClient.deleteVertex(null)", true);
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass
+        }
+        catch(Exception ex) {
+            // fail
+            assertFalse("TestSuite.graphClient.deleteVertex(null) unexpected exception: " + ex.getMessage(), true);   
+        }        
+
+        // delete a non-existing edge
+        try {
+            assertFalse("TestSuite.graphClient.deleteVertex(123456789)", TestSuite.graphClient.deleteVertex(123456789));
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass
+        }
+        catch(Exception ex) {
+            // fail
+            assertFalse("TestSuite.graphClient.deleteVertex(null) unexpected exception: " + ex.getMessage(), true);   
+        }        
+    }
+
+    @Test
+    public void getVertex() throws Exception {
+        logger.info("Executing graphClient.getVertex(...) test.");
+        try {
+            // create an edge between two vertices
+            Vertex v1 = new Vertex();
+            v1.setPropertyValue("married",false);
+            v1 = TestSuite.graphClient.addVertex(v1);
+            assertNotNull(v1);
+            Vertex v2 = new Vertex("person");
+            v2.setPropertyValue("name","Joy");
+            v2.setPropertyValue("age",47);
+            v2 = TestSuite.graphClient.addVertex(v2);
+            assertNotNull(v2);
+
+            v1 = TestSuite.graphClient.getVertex(v1.getId());
+            assertNotNull(v1);
+            assertEquals(v1.toString(), "vertex", v1.getLabel());
+            assertNotNull(v1.toString(), v1.getId());
+            assertEquals(v1.toString(), 1, v1.getProperties().size());
+            assertEquals(v1.toString(), false, v1.getPropertyValue("married"));
+
+            v2 = TestSuite.graphClient.getVertex(v2.getId());
+            assertNotNull(v2);
+            assertEquals(v2.toString(), "person", v2.getLabel());
+            assertNotNull(v2.toString(), v2.getId());
+            assertNotNull(v2.toString(), v2.getProperties());
+            assertEquals(v2.toString(), 2, v2.getProperties().size());
+            assertEquals(v2.toString(), "Joy", v2.getPropertyValue("name"));
+            assertEquals(v2.toString(), 47, v2.getPropertyValue("age"));
+
+            // cleanup
+            assertTrue(TestSuite.graphClient.deleteVertex(v1.getId()));
+            assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));
+        }
+        catch(Exception ex) {
+            // fail
+            assertFalse("TestSuite.graphClient.getVertex(...) unexpected exception: " + ex.getMessage(), true);   
+        }        
+    }
+
+    @Test
+    public void getVertexErrorHandling() throws Exception {
+        logger.info("Executing graphClient.getVertex(...) error handling test.");
+
+        Vertex v1 = null;
+        try {
+            v1 = TestSuite.graphClient.getVertex(null);
+            assertFalse("TestSuite.graphClient.getVertex(null)", true);
+        }
+        catch(IllegalArgumentException iaex) {
+            // pass (vertex id is null)
+        }
+        catch(Exception ex) {
+            // fail
+            ex.printStackTrace();
+            assertFalse("TestSuite.graphClient.getVertex(null): unexpected exception: " + ex.getMessage(), true);   
+        }
+
+        assertNull("TestSuite.graphClient.getVertex(null)", v1);
+        v1 = null;
+        try {
+            v1 = TestSuite.graphClient.getVertex(1234567);
+            assertNull("TestSuite.graphClient.getVertex(1234567)", v1);
+        }
+        catch(Exception ex) {
+            // fail
+            ex.printStackTrace();
+            assertFalse("TestSuite.graphClient.getVertex(1234567): unexpected exception: " + ex.getMessage(), true);   
+        }
     }
 
     @Test

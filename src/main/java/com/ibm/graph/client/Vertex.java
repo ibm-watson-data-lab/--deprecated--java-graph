@@ -11,6 +11,14 @@ public class Vertex extends Entity {
 
     /**
      * Constructor
+     * @throws Exception placeholder
+     */
+    public Vertex() throws Exception {
+        super(null);
+    }
+
+    /**
+     * Constructor
      * @param label vertex label
      * @throws Exception placeholder
      */
@@ -32,16 +40,16 @@ public class Vertex extends Entity {
      * Creates a vertex object from JSON, if json is not null
      * @param json JSON representation of a vertex
      * @return a vertex
-     * @throws Exception placeholder
+     * @throws Exception if an error was encountered
      */
     public static Vertex fromJSONObject(JSONObject json) throws Exception {
         if(json == null) 
-            return null;
+            throw new IllegalArgumentException("Parameter json cannot be null");
         Vertex vertex = new Vertex(
-            json.getString("label")
+            json.optString("label") // optional
         );
-        vertex.setId(json.get("id"));
-        vertex.setProperties(json.optJSONObject("properties"));
+        vertex.setId(json.optString("id")); // optional
+        vertex.setProperties(json.optJSONObject("properties")); // optional
         return vertex;
     }
 }

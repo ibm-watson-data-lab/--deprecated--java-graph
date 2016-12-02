@@ -53,6 +53,32 @@ public class GraphTests {
             logger.error("Unexpected exception was caught: ", ex);
             assertFalse(true);
         }
+
+        String graphId = null;
+
+        try {
+            //
+            String currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph();
+            assertNotNull(graphId);
+            graphsCreated.add(graphId);
+            // the graph should not be in use yet
+            assertNotEquals(graphId, TestSuite.graphClient.getGraphId());
+            // switch to graph
+            TestSuite.graphClient.setGraph(graphId);
+            assertEquals(graphId, TestSuite.graphClient.getGraphId());
+            // 
+            TestSuite.graphClient.setGraph(currentGraphId);
+        }
+        catch(Exception ex) {
+            logger.error("Unexpected exception was caught: ", ex);
+            assertFalse(true);
+        }
+        finally {
+            graphsCreated.remove(graphId);
+        }
     }
 
     @Test
