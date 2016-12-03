@@ -222,13 +222,16 @@ public class IBMGraphClient {
     }
 
     /**
-     * Creates a new graph identified by the specified graphId. If no graphId is provided, a unique id will be 
+     * Creates a new graph identified by the specified graphId. Valid graphIds must 
+     * follow this pattern /^[a-z0-9][a-z0-9_-]*$/ 
+     * If no graphId is provided, a unique id will be assigned.
      * @param graphId unique graph id
      * @return The assigned graph id
      * @throws GraphException if the graph cannot be created
      * @throws GraphClientException if the client encountered a fatal error
      */
     public String createGraph(String graphId) throws GraphException, GraphClientException {
+        logger.trace("createGraph " + graphId);
         try {
             String url = String.format("%s/_graphs",this.baseURL);
             if (graphId != null && graphId.trim().length() > 0) {
@@ -240,13 +243,23 @@ public class IBMGraphClient {
             if(jsonContent.has("graphId"))
                 return jsonContent.getString("graphId");
 
+            // Check if an error was returned. Samples:
+            // {"code":"BadRequestError","message":"graph name must match \/^[a-z0-9][a-z0-9_-]*$\/"}
+            // {"code":"ConflictError","message":"graph get_schema_test is currently being deleted"}
+            if(jsonContent.has("code")) {
+                throw new GraphException("Graph creation failed. Response code: \"" + jsonContent.getString("code") + "\" message: " + jsonContent.optString("message"));
+            }
+
             // the response cannot be interpreted; raise error
             // code changes are required
-            logger.debug("Unknown IBM Graph response for POST /_graphs API call: " + jsonContent.toString());
+            logger.debug("Unexpected IBM Graph response for POST /_graphs API call: " + jsonContent.toString());
             throw new GraphClientException("Unexpected response for POST /_graphs API call: " + jsonContent.toString());               
         }
         catch(GraphClientException gcex) {
             throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
         }
         catch(Exception ex) {
             logger.error("Error creating graph: ", ex);
@@ -297,59 +310,86 @@ public class IBMGraphClient {
     }
 
     /*
-     * ----------------------------------------------------------------
-     * Schema methods:
+     * --------------------------------------------------------------------------
+     * Schema methods: https://ibm-graph-docs.ng.bluemix.net/api.html#schema-apis
+     * A graph schema is defined by its edge labels, vertex labels, property keys, 
+     * and indexes. Schema APIs describe the labels and properties that vertices 
+     * and edges can have and the indexes that are used to query them. Schemas are 
+     * immutable. If multiple POST requests are made to the /schema endpoint, new 
+     * elements are processed but any repeated elements are ignored - even if their 
+     * values have changed.
      *  - getSchema
      *  - saveSchema
-     * ----------------------------------------------------------------     
+     * --------------------------------------------------------------------------
      */
 
     /**
      * Returns the schema for the current graph
-     * @return com.ibm.graph.client.schema.Schema object or null
+     * @return com.ibm.graph.client.schema.Schema object 
      * @throws GraphException if the schema information could not be retrieved
+     * @throws GraphClientException if an error occurred
      */
-    public Schema getSchema() throws GraphException {
+    public Schema getSchema() throws GraphException, GraphClientException {
         try {
             String url = this.apiURL + "/schema";
-            JSONObject jsonContent = this.doHttpGet(url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Schema.fromJSONObject(data.getJSONObject(0));
+            ResultSet rs = new ResultSet(this.doHttpGet(url));
+            if(rs.hasResults()) {
+                return Schema.fromJSONObject(rs.getResultAsJSONObject(0));
             }
-            return null;
+            // the response cannot be interpreted; raise error
+            // code changes are required
+            logger.debug("Unexpected IBM Graph response for GET /_schema API call: " + rs.getResponse().toString());
+            throw new GraphClientException("Unexpected IBM Graph response for GET /_schema API call: " + rs.getResponse().toString()); 
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(Exception ex) {
             logger.error("Error getting schema: ", ex);
-            throw new GraphException("Error getting schema: " + ex.getMessage());  
+            throw new GraphException("Error getting schema: " + ex.getMessage(), ex);  
         }
     }
 
     /**
-     * Updates the schema in the current graph.
-     * @param schema the new schema definition
-     * @return com.ibm.graph.client.schema.Schema object or null
-     * @throws GraphException if the schema could not be saved
+     * Creates or updates (ignoring existing properties/indexes) the schema.
+     * @param schema definition
+     * @return com.ibm.graph.client.schema.Schema the schema
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client
+     * @throws IllegalArgumentExcpetion if schema is null
      * @see com.ibm.graph.client.schema.Schema
      */
-    public Schema saveSchema(Schema schema) throws GraphException {
+    public Schema saveSchema(Schema schema) throws GraphException, GraphClientException, IllegalArgumentException {
         if(schema == null)
-            return null;
+            throw new IllegalArgumentException("Parameter schema is null.");
         try {
             String url = this.apiURL + "/schema";
-            JSONObject jsonContent = this.doHttpPost(schema, url);
-            JSONArray data = jsonContent.getJSONObject("result").getJSONArray("data");
-            if (data.length() > 0) {
-                return Schema.fromJSONObject(data.getJSONObject(0));
+            ResultSet rs = new ResultSet(this.doHttpPost(schema, url));
+            if(rs.hasResults()) {
+                return Schema.fromJSONObject(rs.getResultAsJSONObject(0));
             }
-            else {
-                return null;
+
+            if(rs.hasMetadata()) {
+                // The result set includes status code or message. Raise error and include the information.
+                throw new GraphException("Error saving schema. IBM Graph status code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
             }
+
+            // the response cannot be interpreted; raise error
+            // code changes are required
+
+            logger.debug("Unexpected IBM Graph response for POST /_schema API call: " + rs.getResponse().toString());
+            throw new GraphClientException("Unexpected IBM Graph response for POST /_schema API call: " + rs.getResponse().toString()); 
         }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
         catch(Exception ex) {
             logger.error("Error saving schema: ", ex);
-            throw new GraphException("Error saving schema: " + ex.getMessage());  
-        }        
+            throw new GraphException("Error saving schema: " + ex.getMessage(), ex);  
+        }
     }
 
     /*
@@ -867,7 +907,8 @@ public class IBMGraphClient {
     private JSONObject doHttpRequest(HttpUriRequest request) throws GraphException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
-        try {           
+        try {                
+            logger.debug(String.format("Sending HTTP request %s", request.toString()));
             httpResponse = httpclient.execute(request);
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
