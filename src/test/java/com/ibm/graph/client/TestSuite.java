@@ -15,6 +15,8 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+        PropertyKeyTests.class,
+        EdgeLabelTests.class,
         GraphTests.class,
         SchemaTests.class,
         VertexTests.class,
@@ -47,6 +49,7 @@ public class TestSuite {
                                                         envs.get("TEST_API_URL").toString(),
                                                         envs.get("TEST_USERNAME").toString(),
                                                         envs.get("TEST_PASSWORD").toString());
+           logger.info("Created graphClient instance.");
         }
         catch(Exception ex) {
             logger.error("Error creating IBMGraphClient", ex);   

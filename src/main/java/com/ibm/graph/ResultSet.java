@@ -22,6 +22,7 @@ public class ResultSet {
 	private String statusMessage = null;
 	private String statusCode = null;
 	private JSONArray data = null;
+	private JSONObject response = null;
 
 	/**
 	 * Constructor
@@ -32,6 +33,8 @@ public class ResultSet {
 	public ResultSet(JSONObject response) throws GraphClientException, IllegalArgumentException {
     	if(response == null)
     		throw new IllegalArgumentException("response parameter is missing.");
+
+    	this.response = response;
 
     	logger.debug("Creating ResultSet for response: " + response.toString());
 
@@ -48,7 +51,9 @@ public class ResultSet {
 			}
 			else {
 				// fallback: status information can also be returned as follows:
-				// sample IBM Graph response: {"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
+				// sample IBM Graph responses: 
+				//	{"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
+				// 	{"code":"NotFoundError","message":"graph not found"}
 				if(response.has("message"))
 					this.statusMessage = response.getString("message");
 				if(response.has("code"))
@@ -60,9 +65,7 @@ public class ResultSet {
 			else {
 				this.data = new JSONArray();
 			}
-
 			logger.debug("Created ResultSet for response: " + this.toString());
-
 		}
 		catch(Exception ex) {
 			throw new GraphClientException("The IBM Graph response " + response.toString() + " could not be parsed: " + ex.getMessage(), ex);
@@ -75,6 +78,10 @@ public class ResultSet {
 	 */
 	public String getRequestId() {
 		return this.requestId;
+	}
+
+	public boolean hasMetadata() {
+		return ((this.statusCode != null) || (this.statusMessage != null));
 	}
 
 	/**
@@ -251,7 +258,6 @@ public class ResultSet {
 		}
 	};
 
-
 	/**
 	 * Attempts to interpret each result as an String and returns an iterator.
 	 * @return Iterator String iterator
@@ -268,6 +274,14 @@ public class ResultSet {
 		}
 		return strings.iterator();
 	};
+
+	/**
+	 * Returns the IBM Graph response that this ResultSet is based on
+	 * @return JSONObject the Graph API response
+	 */
+	public JSONObject getResponse() {
+		return this.response;
+	}
 
 	/**
 	 * Returns a string representation of this result set.

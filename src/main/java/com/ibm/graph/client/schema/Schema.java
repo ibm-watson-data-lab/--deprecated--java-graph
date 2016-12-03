@@ -1,50 +1,91 @@
 package com.ibm.graph.client.schema;
 
 import com.ibm.graph.client.Entity;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by markwatson on 11/15/16.
  */
 public class Schema extends JSONObject {
 
-    private PropertyKey[] propertyKeys;
-    private VertexLabel[] vertexLabels;
-    private EdgeLabel[] edgeLabels;
-    private VertexIndex[] vertexIndexes;
-    private EdgeIndex[] edgeIndexes;
+    private static Logger logger =  LoggerFactory.getLogger(Schema.class);
+
+    private PropertyKey[] propertyKeys = {};
+    private VertexLabel[] vertexLabels = {};
+    private EdgeLabel[] edgeLabels = {};
+    private VertexIndex[] vertexIndexes = {};
+    private EdgeIndex[] edgeIndexes = {};
     
-    public Schema(PropertyKey[] propertyKeys, VertexLabel[] vertexLabels, EdgeLabel[] edgeLabels, VertexIndex[] vertexIndexes, EdgeIndex[] edgeIndexes) throws Exception {
-        this.propertyKeys = propertyKeys;
-        this.vertexLabels = vertexLabels;
-        this.edgeLabels = edgeLabels;
-        this.vertexIndexes = vertexIndexes;
-        this.edgeIndexes = edgeIndexes;
+    /**
+     * Constructor.
+     */
+    public Schema() throws Exception {
         this.init();
     }
 
+    /**
+     * Constructor.
+     */
+    public Schema(PropertyKey[] propertyKeys, VertexLabel[] vertexLabels, EdgeLabel[] edgeLabels, VertexIndex[] vertexIndexes, EdgeIndex[] edgeIndexes) throws Exception {
+        if(propertyKeys != null)
+            this.propertyKeys = propertyKeys;
+        if(vertexLabels != null)
+            this.vertexLabels = vertexLabels;
+        if(edgeLabels != null)
+            this.edgeLabels = edgeLabels;
+        if(vertexIndexes != null)
+            this.vertexIndexes = vertexIndexes;
+        if(edgeIndexes != null)
+            this.edgeIndexes = edgeIndexes;
+        this.init();
+    }
+
+    public boolean definesPropertyKeys() {
+        return this.propertyKeys.length > 0;
+    }
+
     public PropertyKey[] getPropertyKeys() {
-        return propertyKeys;
+        return this.propertyKeys;
+    }
+
+    public boolean definesVertexLabels() {
+        return this.vertexLabels.length > 0;
     }
 
     public VertexLabel[] getVertexLabels() {
-        return vertexLabels;
+        return this.vertexLabels;
+    }
+
+    public boolean definesEdgeLabels() {
+        return this.edgeLabels.length > 0;
     }
 
     public EdgeLabel[] getEdgeLabels() {
-        return edgeLabels;
+        return this.edgeLabels;
+    }
+
+    public boolean definesVertexIndexes() {
+        return this.vertexIndexes.length > 0;
     }
 
     public VertexIndex[] getVertexIndexes() {
-        return vertexIndexes;
+        return this.vertexIndexes;
+    }
+
+    public boolean definesEdgeIndexes() {
+        return this.edgeIndexes.length > 0;
     }
 
     public EdgeIndex[] getEdgeIndexes() {
-        return edgeIndexes;
+        return this.edgeIndexes;
     }
 
     private void init() throws Exception {
@@ -85,13 +126,45 @@ public class Schema extends JSONObject {
         this.put("edgeIndexes", edgeIndexesArray);
     }
 
+    /**
+     * Instantiates a Schema object based on json's properties.
+     * Required properties: 
+     * Optional properties: propertyKeys, vertexLabels, edgeLabels, vertexIndexes, edgeIndexes
+     * @param json defines the properties of the Schema object
+     * @return Schema a Schema object
+     * @throws Exception if an error was encountered
+     */
     public static Schema fromJSONObject(JSONObject json) throws Exception {
-        PropertyKey[] propertyKeys = populateArray(json, "propertyKeys", (jsonObject) -> PropertyKey.fromJSONObject(jsonObject)).toArray(new PropertyKey[0]);
-        VertexLabel[] vertexLabels = populateArray(json, "vertexLabels", (jsonObject) -> VertexLabel.fromJSONObject(jsonObject)).toArray(new VertexLabel[0]);
-        EdgeLabel[] edgeLabels = populateArray(json, "edgeLabels", (jsonObject) -> EdgeLabel.fromJSONObject(jsonObject)).toArray(new EdgeLabel[0]);
-        VertexIndex[] vertexIndexes = populateArray(json, "vertexIndexes", (jsonObject) -> VertexIndex.fromJSONObject(jsonObject)).toArray(new VertexIndex[0]);
-        EdgeIndex[] edgeIndexes = populateArray(json, "edgeIndexes", (jsonObject) -> EdgeIndex.fromJSONObject(jsonObject)).toArray(new EdgeIndex[0]);
-        return new Schema(propertyKeys, vertexLabels, edgeLabels, vertexIndexes, edgeIndexes);
+        if(json == null) 
+            throw new IllegalArgumentException("Parameter json cannot be null");
+
+        if(logger.isDebugEnabled())
+            logger.trace(" fromJSONObject input: " + json.toString());
+
+        PropertyKey[] propertyKeys = {};
+        if((json.has("propertyKeys")) && (json.optJSONArray("propertyKeys") != null)) 
+            propertyKeys = populateArray(json, "propertyKeys", (jsonObject) -> PropertyKey.fromJSONObject(jsonObject)).toArray(new PropertyKey[0]);
+
+        VertexLabel[] vertexLabels = {};
+        if((json.has("vertexLabels")) && (json.optJSONArray("vertexLabels") != null)) 
+            vertexLabels = populateArray(json, "vertexLabels", (jsonObject) -> VertexLabel.fromJSONObject(jsonObject)).toArray(new VertexLabel[0]);
+
+        EdgeLabel[] edgeLabels = {};
+        if((json.has("edgeLabels")) && (json.optJSONArray("edgeLabels") != null)) 
+            edgeLabels = populateArray(json, "edgeLabels", (jsonObject) -> EdgeLabel.fromJSONObject(jsonObject)).toArray(new EdgeLabel[0]);
+        
+        VertexIndex[] vertexIndexes = {};
+        if((json.has("vertexIndexes")) && (json.optJSONArray("vertexIndexes") != null)) 
+            vertexIndexes = populateArray(json, "vertexIndexes", (jsonObject) -> VertexIndex.fromJSONObject(jsonObject)).toArray(new VertexIndex[0]);
+        
+        EdgeIndex[] edgeIndexes = {};
+        if((json.has("edgeIndexes")) && (json.optJSONArray("edgeIndexes") != null)) 
+            edgeIndexes = populateArray(json, "edgeIndexes", (jsonObject) -> EdgeIndex.fromJSONObject(jsonObject)).toArray(new EdgeIndex[0]);
+        
+        Schema schema = new Schema(propertyKeys, vertexLabels, edgeLabels, vertexIndexes, edgeIndexes);
+        if(logger.isDebugEnabled())
+            logger.trace(" fromJSONObject output: " + schema.toString());
+        return schema;
     }
 
     private static <E> List<E> populateArray(JSONObject jsonObject, String propertyName, JSONParser<E> jsonParser) throws Exception {

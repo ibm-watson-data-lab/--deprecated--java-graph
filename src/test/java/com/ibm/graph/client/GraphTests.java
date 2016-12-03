@@ -45,7 +45,7 @@ public class GraphTests {
 
     @Test
     public void getGraphId() throws Exception {
-        logger.info("Executing IBMGraphClient.getGraphId() test.");
+        logger.info("Executing graphClient.getGraphId() test.");
         try {
             assertNotNull(TestSuite.graphClient.getGraphId());
         }
@@ -83,7 +83,7 @@ public class GraphTests {
 
     @Test
     public void getGraphs() throws Exception {
-        logger.info("Executing IBMGraphClient.getGraphs() test.");
+        logger.info("Executing graphClient.getGraphs() test.");
         try {
             // create a graph, verify it exists, and then delete it (no valid name provided)
             String graphId = TestSuite.graphClient.createGraph(null);
@@ -109,7 +109,7 @@ public class GraphTests {
 
     @Test
     public void createGraph() throws Exception {
-        logger.info("Executing IBMGraphClient.createGraph(...) test.");
+        logger.info("Executing graphClient.createGraph(...) test.");
         try {
             // create a graph, verify it exists, and then delete it (no valid name provided)
             String graphId = TestSuite.graphClient.createGraph();
@@ -165,9 +165,28 @@ public class GraphTests {
         }
     }
 
+    @Test
+    public void testCreateGraphErrorHandling() throws Exception {
+        logger.info("Executing graphClient.createGraph() error handling test.");
+        
+        try {
+            String graphId = null;
+            graphId = TestSuite.graphClient.createGraph("_invalid_Graph_Name");
+            assertNull(graphId, graphId);
+        }
+        catch(GraphException gex) {
+            // pass
+        }
+        catch(Exception ex) {
+            // fail
+            logger.error("Unexpected exception was caught: ", ex);
+            assertFalse(true);
+        }      
+    }
+
    @Test
     public void setGraph() throws Exception {
-        logger.info("Executing IBMGraphClient.setGraph(...) test.");
+        logger.info("Executing graphClient.setGraph(...) test.");
         try {
 
         }
@@ -179,7 +198,7 @@ public class GraphTests {
 
     @Test
     public void testSetGraphErrorhandling() throws Exception {
-        logger.info("Executing IBMGraphClient.setGraph(...) error handling test.");
+        logger.info("Executing graphClient.setGraph(...) error handling test.");
         // null parameter
         try {
             TestSuite.graphClient.setGraph(null);
@@ -233,26 +252,12 @@ public class GraphTests {
         }
     }  
 
-    @Test
-    public void testCreateGraphErrorHandling() throws Exception {
-        logger.info("Executing IBMGraphClient.createGraph() error handling test.");
-        
-        try {
-            TestSuite.graphClient.createGraph(null);
-        }
-        catch(Exception ex) {
-            logger.error("Unexpected exception was caught: ", ex);
-            assertFalse(true);
-        }
-    }
-
    @Test
     public void deleteGraph() throws Exception {
-        logger.info("Executing IBMGraphClient.deleteGraph(...) test.");
-        
+        logger.info("Executing graphClient.deleteGraph(...) test.");       
         try {
-            // create dummy graph
-            String graphId = TestSuite.graphClient.createGraph();
+            // create dummy graph   
+            String graphId = TestSuite.graphClient.createGraph();   
             assertNotNull(graphId);
             assertTrue(TestSuite.graphClient.deleteGraph(graphId));
             // verify graph no longer exists
@@ -269,7 +274,7 @@ public class GraphTests {
 
     @Test
     public void testDeleteGraphErrorHandling() throws Exception {
-        logger.info("Executing IBMGraphClient.deleteGraph(...) error handling test.");
+        logger.info("Executing graphClient.deleteGraph(...) error handling test.");
         
         try {
             // invalid parameter
@@ -323,7 +328,7 @@ public class GraphTests {
 
     @Test
     public void createGraphRandomId() throws Exception {
-        logger.info("Executing IBMGraphClient.createGraph(...) test.");
+        logger.info("Executing graphClient.createGraph(...) test.");
 
         // create a graph, verify it exists, but don't delete it (it will be used for the rest of the tests)
         String randomGraphId = UUID.randomUUID().toString();
