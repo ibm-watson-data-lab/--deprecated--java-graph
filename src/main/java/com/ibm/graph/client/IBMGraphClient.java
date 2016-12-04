@@ -819,23 +819,55 @@ public class IBMGraphClient {
      * @throws IllegalArgumentException gremlin is null or an empty string
      */
     public ResultSet executeGremlin(String gremlin) throws GraphException, IllegalArgumentException {
+        return executeGremlin(gremlin, null);
+    }
+
+    /**
+     * Runs the specified Gremlin using the optionally provided bindings. Bindings must be defined as a JSON string
+     * containing only primitive types as values {"parm1":"string_value1", "parm2": boolean_value, "parm3": integer_value}
+     * @param gremlin the traversal to be performed
+     * @param bindings optional gremlin bindings. P 
+     * @return ResultSet the result of the graph traversal
+     * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException gremlin is null or an empty string or bindings is an empty string
+     */
+    public ResultSet executeGremlin(String gremlin, String bindings) throws GraphException, IllegalArgumentException {
         if((gremlin == null) || (gremlin.trim().length() == 0)) {
             throw new IllegalArgumentException("gremlin parameter is null or empty.");
         }
+        if(bindings != null) {
+            if(bindings.trim().length() == 0) {
+                // The callers' intention is not clear. Assume that the bindings information is missing. 
+                throw new IllegalArgumentException("bindings parameter is empty.");
+            }            
+            try {
+                // parse bindings parameter - it should be a valid JSONObject
+                // e.g. {"vertexOne": 4000, "vertexTwo": 4001, "edgeLabel": "tweets", "propKey1": "city", "value1": "orlando"}
+                new JSONObject(bindings);
+                // TODO verify that values are only be primitive types, such as String, Integer, Boolean, ...
+            }
+            catch(JSONException jsonex) {
+                throw new IllegalArgumentException("bindings parameter cannot be parsed.", jsonex);
+            }            
+        }
+        
+
         if (logger.isDebugEnabled()) {
-            logger.debug("Running Gremlin: " + gremlin);
+            logger.debug("Executing gremlin \"" + gremlin + "\" bindings: " + bindings);
         }
         try {
             String url = this.apiURL + "/gremlin";
             JSONObject postData = new JSONObject();
             postData.put("gremlin", String.format("def g = graph.traversal(); %s",gremlin));
+            if(bindings != null)
+                postData.put("bindings", bindings);
             return new ResultSet(this.doHttpPost(postData, url));
         }
         catch(Exception ex) {
-            logger.error("Error processing gremlin " + gremlin + ": ", ex);
+            logger.error("Error executing gremlin \"" + gremlin + "\" bindings: " + bindings, ex);
             throw new GraphException("Error processing gremlin " + gremlin + ": " + ex.getMessage());               
         }
-    }
+    }    
 
 
     /*

@@ -22,10 +22,12 @@ import java.util.Map;
         EntityIndexTests.class,
         VertexIndexTests.class,
         EdgeIndexTests.class,
+        ResultSetTests.class,
         GraphTests.class,
         SchemaTests.class,
         VertexTests.class,
-        EdgeTests.class
+        EdgeTests.class,
+        GremlinTests.class
 })
 public class TestSuite {
 
