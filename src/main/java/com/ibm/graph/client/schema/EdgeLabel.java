@@ -1,5 +1,6 @@
 package com.ibm.graph.client.schema;
 
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -39,7 +40,7 @@ public class EdgeLabel extends EntityLabel {
      * @param name A unique string. A non-empty value is required.
      * @throws IllegalArgumentException if any parameter violates the stated constraints
      */
-    public EdgeLabel(String name) throws Exception {
+    public EdgeLabel(String name) throws IllegalArgumentException {
         this(name, null);
     }
 
@@ -52,7 +53,7 @@ public class EdgeLabel extends EntityLabel {
      * Defaults to com.ibm.graph.client.schema.EdgeLabelMultiplicity.SIMPLE if multiplicity is null.
      * @throws IllegalArgumentException if any parameter violates the stated constraints
      */
-    public EdgeLabel(String name, EdgeLabelMultiplicity multiplicity) throws Exception {
+    public EdgeLabel(String name, EdgeLabelMultiplicity multiplicity) throws IllegalArgumentException {
         super(name);
         if((name == null) || (name.trim().length() == 0))
             throw new IllegalArgumentException("Parameter name is null or empty.");
@@ -60,7 +61,13 @@ public class EdgeLabel extends EntityLabel {
             multiplicity = EdgeLabelMultiplicity.SIMPLE; // default
 
         this.multiplicity = multiplicity;
-        this.put("multiplicity", this.multiplicity.name());
+        try {
+            this.put("multiplicity", this.multiplicity.name());
+        }
+        catch(JSONException jsonex) {
+            // cannot be thrown
+            throw new IllegalArgumentException("JSONException caught.", jsonex);
+        }
     }
 
     public EdgeLabelMultiplicity getMultiplicity() {
@@ -78,7 +85,7 @@ public class EdgeLabel extends EntityLabel {
      * @return EdgeLabel if json defines all required properties
      * @throws IllegalArgumentException if json is null or does not define the required properties
      */
-    public static EdgeLabel fromJSONObject(JSONObject json) throws Exception {
+    public static EdgeLabel fromJSONObject(JSONObject json) throws IllegalArgumentException {
         if(json == null) 
             throw new IllegalArgumentException("Parameter json cannot be null");
         if((! json.has("name")) || (json.optString("name") == null))

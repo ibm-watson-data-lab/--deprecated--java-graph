@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import org.slf4j.Logger;
@@ -27,14 +28,25 @@ public class Schema extends JSONObject {
     /**
      * Constructor.
      */
-    public Schema() throws Exception {
-        this.init();
+    public Schema() {
+        try {
+            this.init();
+        }
+        catch(JSONException jsonex) {
+            // input parameters are safe. ignore
+        }
     }
 
     /**
      * Constructor.
+     * @param propertyKeys declare propertyKey definitions
+     * @param vertexLabels declare vertexLabel definitions
+     * @param edgeLabels declare edge label definitions
+     * @param vertexIndexes declare vertex index definitions
+     * @param edgeIndexes declare edge index definitions
+     * @throws IllegalArgumentException one or more parameters are invalid
      */
-    public Schema(PropertyKey[] propertyKeys, VertexLabel[] vertexLabels, EdgeLabel[] edgeLabels, VertexIndex[] vertexIndexes, EdgeIndex[] edgeIndexes) throws Exception {
+    public Schema(PropertyKey[] propertyKeys, VertexLabel[] vertexLabels, EdgeLabel[] edgeLabels, VertexIndex[] vertexIndexes, EdgeIndex[] edgeIndexes) throws IllegalArgumentException {
         if(propertyKeys != null)
             this.propertyKeys = propertyKeys;
         if(vertexLabels != null)
@@ -45,7 +57,12 @@ public class Schema extends JSONObject {
             this.vertexIndexes = vertexIndexes;
         if(edgeIndexes != null)
             this.edgeIndexes = edgeIndexes;
-        this.init();
+        try {
+            this.init();
+        }
+        catch(JSONException jsonex) {
+            throw new IllegalArgumentException("Schema object initialization failed: " + jsonex.getMessage(), jsonex);
+        }
     }
 
     public boolean definesPropertyKeys() {
@@ -88,7 +105,7 @@ public class Schema extends JSONObject {
         return this.edgeIndexes;
     }
 
-    private void init() throws Exception {
+    private void init() throws JSONException {
         JSONArray propertyKeysArray = new JSONArray();
         if (this.propertyKeys != null && this.propertyKeys.length > 0) {
             for (PropertyKey propertyKey : this.propertyKeys) {
