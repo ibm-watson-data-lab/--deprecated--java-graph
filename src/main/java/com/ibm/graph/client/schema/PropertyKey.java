@@ -1,5 +1,6 @@
 package com.ibm.graph.client.schema;
 
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -61,21 +62,21 @@ public class PropertyKey extends JSONObject {
     /**
      * Constructor. Creates a PropertyKey with cardinality com.ibm.graph.client.schema.PropertyKeyCardinality.SINGLE.
      * @param name A unique string. This value is required.
-     * @param datatype Supported data types are com.ibm.graph.client.schema.PropertyKeyDataType.Integer, com.ibm.graph.client.schema.PropertyKeyDataType.Float, com.ibm.graph.client.schema.PropertyKeyDataType.Boolean, and com.ibm.graph.client.schema.PropertyKeyDataType.String. This value is required.
+     * @param dataType Supported data types are com.ibm.graph.client.schema.PropertyKeyDataType.Integer, com.ibm.graph.client.schema.PropertyKeyDataType.Float, com.ibm.graph.client.schema.PropertyKeyDataType.Boolean, and com.ibm.graph.client.schema.PropertyKeyDataType.String. This value is required.
      * @throws IllegalArgumentException if any parameter violates the stated constraints
      */
-    public PropertyKey(String name, PropertyKeyDataType dataType) throws Exception {
+    public PropertyKey(String name, PropertyKeyDataType dataType) throws IllegalArgumentException {
         this(name, dataType, null);
     }
 
     /**
      * Constructor
      * @param name A unique string. This value is required.
-    * @param datatype Supported data types are PropertyKeyDataType.Integer, PropertyKeyDataType.Float, PropertyKeyDataType.Boolean, and PropertyKeyDataType.String. This value is required.
+     * @param dataType Supported data types are PropertyKeyDataType.Integer, PropertyKeyDataType.Float, PropertyKeyDataType.Boolean, and PropertyKeyDataType.String. This value is required.
      * @param cardinality One of SINGLE, LIST, or SET. The default is SINGLE.
      * @throws IllegalArgumentException if any parameter violates the stated constraints
      */
-    public PropertyKey(String name, PropertyKeyDataType dataType, PropertyKeyCardinality cardinality) throws Exception {
+    public PropertyKey(String name, PropertyKeyDataType dataType, PropertyKeyCardinality cardinality) throws IllegalArgumentException {
         if((name == null) || (name.trim().length() == 0))
             throw new IllegalArgumentException("Parameter name is null or empty.");
         if(dataType == null)
@@ -101,10 +102,16 @@ public class PropertyKey extends JSONObject {
         return cardinality;
     }
 
-    private void init() throws Exception {
-        this.put("name", this.name);
-        this.put("dataType", this.dataType.name());
-        this.put("cardinality", this.cardinality.name());
+    private void init()  {
+        try {
+            this.put("name", this.name);
+            this.put("dataType", this.dataType.name());
+            this.put("cardinality", this.cardinality.name());
+        }
+        catch(JSONException jsonex) {
+            // Thrown if key is null, not a string, or the value could not be converted to JSON.
+            // values are safe. ignore
+        }
     }
 
     /**
@@ -118,7 +125,7 @@ public class PropertyKey extends JSONObject {
      * @return PropertyKey if json defines all required properties
      * @throws IllegalArgumentException if json is null or does not define the required properties
      */
-    public static PropertyKey fromJSONObject(JSONObject json) throws Exception {
+    public static PropertyKey fromJSONObject(JSONObject json) throws IllegalArgumentException {
         if(json == null) 
             throw new IllegalArgumentException("Parameter json cannot be null");
         if((! json.has("name")) || (json.optString("name") == null))

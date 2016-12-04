@@ -356,7 +356,7 @@ public class IBMGraphClient {
      * @return com.ibm.graph.client.schema.Schema the schema
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client
-     * @throws IllegalArgumentExcpetion if schema is null
+     * @throws IllegalArgumentException if schema is null
      * @see com.ibm.graph.client.schema.Schema
      */
     public Schema saveSchema(Schema schema) throws GraphException, GraphClientException, IllegalArgumentException {

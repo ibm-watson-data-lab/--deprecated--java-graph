@@ -16,7 +16,12 @@ import java.util.Map;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         PropertyKeyTests.class,
+        EntityLabelTests.class,
         EdgeLabelTests.class,
+        VertexLabelTests.class,
+        EntityIndexTests.class,
+        VertexIndexTests.class,
+        EdgeIndexTests.class,
         GraphTests.class,
         SchemaTests.class,
         VertexTests.class,
