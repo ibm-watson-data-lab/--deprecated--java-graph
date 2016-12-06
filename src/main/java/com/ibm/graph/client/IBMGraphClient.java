@@ -819,23 +819,38 @@ public class IBMGraphClient {
      * @throws IllegalArgumentException gremlin is null or an empty string
      */
     public ResultSet executeGremlin(String gremlin) throws GraphException, IllegalArgumentException {
+        return executeGremlin(gremlin, null);
+    }
+
+    /**
+     * Runs the specified Gremlin using the optionally provided bindings. 
+     * @param gremlin the traversal to be performed
+     * @param bindings optional gremlin bindings. 
+     * @return ResultSet the result of the graph traversal
+     * @throws GraphException if an error occurred
+     * @throws IllegalArgumentException gremlin is null or an empty string or bindings is an empty string
+     */
+    public ResultSet executeGremlin(String gremlin, HashMap<String, Object> bindings) throws GraphException, IllegalArgumentException {
         if((gremlin == null) || (gremlin.trim().length() == 0)) {
             throw new IllegalArgumentException("gremlin parameter is null or empty.");
         }
+        
         if (logger.isDebugEnabled()) {
-            logger.debug("Running Gremlin: " + gremlin);
+            logger.debug("Executing gremlin \"" + gremlin + "\" bindings: " + bindings);
         }
         try {
             String url = this.apiURL + "/gremlin";
             JSONObject postData = new JSONObject();
             postData.put("gremlin", String.format("def g = graph.traversal(); %s",gremlin));
+            if((bindings != null) && (! bindings.isEmpty()))
+                postData.put("bindings", bindings);
             return new ResultSet(this.doHttpPost(postData, url));
         }
         catch(Exception ex) {
-            logger.error("Error processing gremlin " + gremlin + ": ", ex);
+            logger.error("Error executing gremlin \"" + gremlin + "\" bindings: " + bindings, ex);
             throw new GraphException("Error processing gremlin " + gremlin + ": " + ex.getMessage());               
         }
-    }
+    }    
 
 
     /*
