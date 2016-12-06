@@ -1,7 +1,7 @@
 package com.ibm.graph.client;
 
 import com.ibm.graph.client.schema.EdgeIndex;
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.GraphException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

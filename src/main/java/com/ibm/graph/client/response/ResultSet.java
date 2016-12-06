@@ -1,6 +1,6 @@
-package com.ibm.graph;
+package com.ibm.graph.client.response;
 
-import com.ibm.graph.client.GraphClientException;
+import com.ibm.graph.client.exception.GraphClientException;
 import com.ibm.graph.client.Edge;
 import com.ibm.graph.client.Vertex;
 
@@ -19,8 +19,6 @@ public class ResultSet {
 	private static Logger logger =  LoggerFactory.getLogger(ResultSet.class);		
 
 	private String requestId = null; // e.g. "7e2914a1-cf17-4571-9791-4411c15d5c96" (optional)
-	private String statusMessage = null;
-	private String statusCode = null;
 	private JSONArray data = null;
 	private JSONObject response = null;
 
@@ -42,29 +40,15 @@ public class ResultSet {
 			if(response.has("requestId")) {
 				this.requestId = response.getString("requestId");
 			}
-			// extract status information
-			if(response.has("status")) {
-				if(response.getJSONObject("status").has("message"))
-					this.statusMessage = response.getJSONObject("status").getString("message");
-				if(response.getJSONObject("status").has("code"))
-					this.statusCode = response.getJSONObject("status").getString("code");
-			}
-			else {
-				// fallback: status information can also be returned as follows:
-				// sample IBM Graph responses: 
-				//	{"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
-				// 	{"code":"NotFoundError","message":"graph not found"}
-				if(response.has("message"))
-					this.statusMessage = response.getString("message");
-				if(response.has("code"))
-					this.statusCode = response.getString("code");					
-			}
+
 			if(response.has("result")) {
 				this.data = response.getJSONObject("result").getJSONArray("data");
 			}
 			else {
 				this.data = new JSONArray();
+				this.data.add(response);
 			}
+
 			logger.debug("Created ResultSet for response: " + this.toString());
 		}
 		catch(Exception ex) {
@@ -78,26 +62,6 @@ public class ResultSet {
 	 */
 	public String getRequestId() {
 		return this.requestId;
-	}
-
-	public boolean hasMetadata() {
-		return ((this.statusCode != null) || (this.statusMessage != null));
-	}
-
-	/**
-	 * Returns the response's status code
-	 * @return String the response's HTTP status code (200 = ok)
-	 */
-	public String getStatusCode() {
-		return this.statusCode;
-	}
-
-	/**
-	 * Returns the response's message text
-	 * @return String message text
-	 */
-	public String getStatusMessage() {
-		return this.statusMessage;
 	}
 
 	/**
@@ -281,15 +245,6 @@ public class ResultSet {
 	 */
 	public JSONObject getResponse() {
 		return this.response;
-	}
-
-	/**
-	 * Returns a string representation of this result set.
-	 * @return String the result set encoded as a string
-	 */
-	public String toString() {
-		return "requestId: " + this.requestId + " status code: " + this.statusCode + " status message: " + 
-		       this.getStatusMessage() + " result set size: " + this.data.length();
 	}
 
 }

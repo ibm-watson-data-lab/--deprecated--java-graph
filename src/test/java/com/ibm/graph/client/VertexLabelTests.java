@@ -1,7 +1,7 @@
 package com.ibm.graph.client;
 
 import com.ibm.graph.client.schema.VertexLabel;
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.GraphException;
 
 import org.junit.Ignore;
 import org.junit.Test;

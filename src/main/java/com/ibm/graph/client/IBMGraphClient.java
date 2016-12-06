@@ -1,9 +1,10 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.GraphException;
-import com.ibm.graph.client.GraphClientException;
+import com.ibm.graph.client.exception.GraphException;
+import com.ibm.graph.client.exception.GraphClientException;
+import com.ibm.graph.client.response.GraphResponse;
 import com.ibm.graph.client.schema.Schema;
-import com.ibm.graph.ResultSet;
+import com.ibm.graph.client.response.ResultSet;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.mime.content.FileBody;
@@ -152,7 +153,7 @@ public class IBMGraphClient {
 
     /**
      * Switches to the graph identified by graphId.
-     * @param graphId name of the graph on which the client will operate on
+     * @param graphId name of the graph on which the client will operate on in the future
      * @throws GraphException if no graph with the specified graphId exists
      * @throws GraphClientException if the client encountered a fatal error
      * @throws IllegalArgumentException if graphId is null or empty
@@ -167,14 +168,14 @@ public class IBMGraphClient {
             this.apiURL = String.format("%s/%s",this.baseURL,this.graphId);
         }
         else {
-            throw new GraphException("No graph named " + graphId + " is defined.");
+            throw new GraphException("No graph with name " + graphId + " is defined.");
         }
     }
 
     /**
      * Returns list of graphs that are defined in this IBM Graph service instance
      * @return An array of strings, identifying graphs that can be switched to.
-     * @throws GraphException if the graph list cannot be retrieved
+     * @throws GraphException if IBM Graph returned an error
      * @throws GraphClientException if the client encountered a fatal error
      * @see com.ibm.graph.client.IBMGraphClient#setGraph
      */
@@ -182,24 +183,25 @@ public class IBMGraphClient {
 
         try {
             String url = this.baseURL + "/_graphs";
-            JSONObject jsonContent = this.doHttpGet(url);
-            // sample success response (doesn't follow "standard") - can't use ResultSet
-            // {"graphs":["1...3","1","g","zzz"]}
-            if(jsonContent.has("graphs")) {
-                JSONArray data = jsonContent.getJSONArray("graphs");    
-                List<String> graphIds = new ArrayList<>();
-                if (data.length() > 0) {
-                    for(int i=0; i<data.length(); i++) {
-                        graphIds.add(data.getString(i));
+
+            GraphResponse response = this.doHttpGet(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                JSONObject result = response.getResultSet().getResultAsJSONObject(0);
+                // {"graphs":["1...3","1","g","zzz"]}
+                if(result.has("graphs")) {
+                    JSONArray data = result.getJSONArray("graphs");    
+                    List<String> graphIds = new ArrayList<>();
+                    if (data.length() > 0) {
+                        for(int i=0; i<data.length(); i++) {
+                            graphIds.add(data.getString(i));
+                        }
                     }
+                    return graphIds.toArray(new String[0]);
                 }
-                return graphIds.toArray(new String[0]);
             }
-            else{
-                // the response cannot be interpreted; raise error
-                // code changes are required
-                logger.debug("Unknown IBM Graph response for GET /_graphs API call: " + jsonContent.toString());
-                throw new GraphClientException("Unexpected response for GET /_graphs API call: " + jsonContent.toString());  
+            else {
+                // IBM Graph returned an error
+                throw new GraphException(response.getGraphStatus(), response.getHTTPStatus());
             }
         }
         catch(GraphClientException gcex) {
@@ -237,23 +239,23 @@ public class IBMGraphClient {
             if (graphId != null && graphId.trim().length() > 0) {
                 url += String.format("/%s",graphId.trim());
             }
-            JSONObject jsonContent = this.doHttpPost(null, url);
-            // sample success response (doesn't follow "standard") - can't use ResultSet            
-            // response: {"graphId":"1...3","dbUrl":"https://...3"}
-            if(jsonContent.has("graphId"))
-                return jsonContent.getString("graphId");
 
-            // Check if an error was returned. Samples:
-            // {"code":"BadRequestError","message":"graph name must match \/^[a-z0-9][a-z0-9_-]*$\/"}
-            // {"code":"ConflictError","message":"graph get_schema_test is currently being deleted"}
-            if(jsonContent.has("code")) {
-                throw new GraphException("Graph creation failed. Response code: \"" + jsonContent.getString("code") + "\" message: " + jsonContent.optString("message"));
+            GraphResponse response = this.doHttpPost(null, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                JSONObject result = response.getResultSet().getResultAsJSONObject(0);
+                // response: {"graphId":"1...3","dbUrl":"https://...3"}
+                if(result.has("graphId")) {
+                    return result.getString("graphId");
+                }
+                else {
+                    // the response does not contain a graph name; raise error
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed. No graph id was returned.");
+                }
             }
-
-            // the response cannot be interpreted; raise error
-            // code changes are required
-            logger.debug("Unexpected IBM Graph response for POST /_graphs API call: " + jsonContent.toString());
-            throw new GraphClientException("Unexpected response for POST /_graphs API call: " + jsonContent.toString());               
+            else {
+                // IBM Graph returned an error
+                throw new GraphException(response.getGraphStatus(), response.getHTTPStatus());
+            }
         }
         catch(GraphClientException gcex) {
             throw gcex;
@@ -262,8 +264,7 @@ public class IBMGraphClient {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error creating graph: ", ex);
-            throw new GraphException("An exception was caught trying to create a graph:" + ex.getMessage(), ex);               
+            throw new GraphClientException("An exception was caught trying to create a graph:" + ex.getMessage(), ex);               
         }
     }
 
@@ -282,30 +283,27 @@ public class IBMGraphClient {
 
         try {
             String url = String.format("%s/_graphs/%s",this.baseURL,graphId.trim());
-            JSONObject jsonContent = this.doHttpDelete(url);
-            // sample success response (doesn't follow "standard") - can't use ResultSet            
-            // {"data":{}}
-            if(jsonContent.has("data")) {
+
+            GraphResponse response = this.doHttpDelete(url);
+            // sample success response: {"data":{}}
+            if(response.getHTTPStatus().isSuccessResponse()) {
                 return true;
-            } else {
-                // sample failure reponse (doesn't follow "standard") - can't use ResultSet            
-                // {"code":"NotFoundError","message":"graph not found"}
-                if(jsonContent.has("code") && ("NotFoundError".equalsIgnoreCase(jsonContent.getString("code"))))
+            }
+            else {
+                if(response.getHTTPStatus().getStatusCode() == 404) {
+                    // graph not found. don't treat this as an error
                     return false;
-                else {
-                    // the response cannot be interpreted; raise error
-                    // code changes are required
-                    logger.debug("Uexpected IBM Graph response for DELETE /_graphs/:graphId API call: " + jsonContent.toString());
-                    throw new GraphClientException("Unexpected IBM Graph response for DELETE /_graphs/:graphId API call: " + jsonContent.toString()); 
                 }
+                   
+                // unknown status code; raise error
+                throw new GraphClientException("The graph could not be deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
             }
         }
         catch(GraphClientException gcex) {
             throw gcex;
         }
         catch(Exception ex) {
-            logger.error("Error deleting graph: ", ex);
-            throw new GraphException("An exception was caught trying to delete a graph:" + ex.getMessage(), ex);               
+            throw new GraphClientException("An exception was caught trying to delete a graph:" + ex.getMessage(), ex);               
         }
     }
 
@@ -326,27 +324,27 @@ public class IBMGraphClient {
     /**
      * Returns the schema for the current graph
      * @return com.ibm.graph.client.schema.Schema object 
-     * @throws GraphException if the schema information could not be retrieved
-     * @throws GraphClientException if an error occurred
+     * @throws GraphException if IBM Graph returned an error
+     * @throws GraphClientException if the client encountered a fatal error
      */
     public Schema getSchema() throws GraphException, GraphClientException {
         try {
             String url = this.apiURL + "/schema";
-            ResultSet rs = new ResultSet(this.doHttpGet(url));
-            if(rs.hasResults()) {
-                return Schema.fromJSONObject(rs.getResultAsJSONObject(0));
-            }
-            // the response cannot be interpreted; raise error
-            // code changes are required
-            logger.debug("Unexpected IBM Graph response for GET /_schema API call: " + rs.getResponse().toString());
-            throw new GraphClientException("Unexpected IBM Graph response for GET /_schema API call: " + rs.getResponse().toString()); 
+
+            GraphResponse response = this.doHttpGet(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return Schema.fromJSONObject(response.getResultSet().getResultAsJSONObject(0));
+                else {
+                    throw new GraphClientException("IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
+            }    
         }
         catch(GraphClientException gcex) {
             throw gcex;
         }
         catch(Exception ex) {
-            logger.error("Error getting schema: ", ex);
-            throw new GraphException("Error getting schema: " + ex.getMessage(), ex);  
+            throw new GraphClientException("An exception was caught trying to fetch the schema:" + ex.getMessage(), ex); 
         }
     }
 
@@ -364,31 +362,31 @@ public class IBMGraphClient {
             throw new IllegalArgumentException("Parameter schema is null.");
         try {
             String url = this.apiURL + "/schema";
-            ResultSet rs = new ResultSet(this.doHttpPost(schema, url));
-            if(rs.hasResults()) {
-                return Schema.fromJSONObject(rs.getResultAsJSONObject(0));
+
+            GraphResponse response = this.doHttpPost(schema, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return Schema.fromJSONObject(response.getResultSet().getResultAsJSONObject(0));
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
-
-            if(rs.hasMetadata()) {
-                // The result set includes status code or message. Raise error and include the information.
-                throw new GraphException("Error saving schema. IBM Graph status code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }
-
-            // the response cannot be interpreted; raise error
-            // code changes are required
-
-            logger.debug("Unexpected IBM Graph response for POST /_schema API call: " + rs.getResponse().toString());
-            throw new GraphClientException("Unexpected IBM Graph response for POST /_schema API call: " + rs.getResponse().toString()); 
-        }
+            else {
+                if(response.getHTTPStatus().isClientErrorResponse()) {
+                    throw new GraphException("The schema could not be saved.", response.getGraphStatus(), response.getHTTPStatus());
+                }
+                else 
+                    throw new GraphClientException("The schema could not be saved. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+            }               
+        }  
         catch(GraphClientException gcex) {
             throw gcex;
         }
         catch(GraphException gex) {
             throw gex;
-        }        
+        }
         catch(Exception ex) {
-            logger.error("Error saving schema: ", ex);
-            throw new GraphException("Error saving schema: " + ex.getMessage(), ex);  
+            throw new GraphClientException("An exception was caught trying to save the schema:" + ex.getMessage(), ex); 
         }
     }
 
@@ -399,25 +397,37 @@ public class IBMGraphClient {
      * ----------------------------------------------------------------     
      */
 
-
     /**
      * Deletes an index in the current graph.
      * @param indexName name of an existing index
      * @return true if indexName was removed
+     * @throws IllegalArgumentException if schema is null or an empty string     
      * @throws GraphException if the index could not be deleted 
      */
-    public boolean deleteIndex(String indexName) throws GraphException {
-        if(indexName == null)
-            return false;
+    public boolean deleteIndex(String indexName) throws GraphException, IllegalArgumentException {
+       if((indexName == null) || (indexName.trim().length() == 0))
+            throw new IllegalArgumentException("Parameter indexName is null or empty.");
         try {
             String url = this.apiURL + "/index/" + indexName;
-            JSONObject jsonContent = this.doHttpDelete(url);
-            return jsonContent.getJSONObject("result").getJSONArray("data").getBoolean(0);
+
+            GraphResponse response = this.doHttpDelete(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("The index was deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
+            }
+            else {
+                throw new GraphClientException("The index could not be deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+            }
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(Exception ex) {
-            logger.error("Error deleting index: ", ex);
-            throw new GraphException("Error deleting index: " + ex.getMessage());  
-        }                
+            throw new GraphClientException("An exception was caught trying to delete the index named " + indexName + " :" + ex.getMessage(), ex); 
+        }            
     }
 
     /*
@@ -864,7 +874,7 @@ public class IBMGraphClient {
      * ----------------------------------------------------------------     
      */
 
-    private JSONObject doHttpGet(String url) throws GraphClientException, GraphException {
+    private GraphResponse doHttpGet(String url) throws GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -875,7 +885,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpGet);
     }
 
-    private JSONObject doHttpPost(JSONObject json, String url) throws GraphClientException, GraphException {
+    private GraphResponse doHttpPost(JSONObject json, String url) throws GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -889,7 +899,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpPost);
     }
 
-    private JSONObject doHttpPut(JSONObject json, String url) throws GraphClientException, GraphException {
+    private GraphResponse doHttpPut(JSONObject json, String url) throws GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -903,7 +913,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpPut);
     }
 
-    private JSONObject doHttpDelete(String url) throws GraphClientException, GraphException {
+    private GraphResponse doHttpDelete(String url) throws GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -917,9 +927,10 @@ public class IBMGraphClient {
     /**
      * Executes an HTTP request.
      * @param request the request to be executed
-     * @throws GraphException if a fatal processing error was encountered 
+     * @returns GraphResponse for this request
+     * @throws GraphClientException if a fatal  error was encountered 
      **/
-    private JSONObject doHttpRequest(HttpUriRequest request) throws GraphException {
+    private GraphResponse doHttpRequest(HttpUriRequest request) throws GraphClientException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
         try {                
@@ -935,28 +946,17 @@ public class IBMGraphClient {
                                        request.getURI(), 
                                        httpResponse.getStatusLine().getStatusCode(), 
                                        httpResponse.getStatusLine().getReasonPhrase(), 
-                                       content));            
-            JSONObject response = null;
-            try {
-                response = new JSONObject(content);
-            }
-            catch(JSONException ex) {
-                // the server's response is not valid JSON (typically if fatal errors are encountered)
-                // create default JSON data structure:
-                // "status" : { 
-                //              "code": <HTTP_CODE>
-                //              "message": <BODY_OF_RESPONSE>
-                //            }
-                HashMap<String, String> status = new HashMap();
-                status.put("code", String.valueOf(httpResponse.getStatusLine().getStatusCode()));
-                status.put("message", content);
-                response = new JSONObject().put("status", status);
-            }
+                                       content));  
+
+            // assemble response information
+            GraphResponse response = new GraphResponse(new HTTPResponseInfo(httpResponse.getStatusLine().getStatusCode(),
+                                                                            httpResponse.getStatusLine().getReasonPhrase()),
+                                                       content);
             return response;
         }
         catch(Exception ex) {
             logger.error("Error processing HTTP request ", ex);            
-            throw new GraphException("Error processing HTTP request: " + ex.getMessage());
+            throw new GraphClientException("Error processing HTTP request: " + ex.getMessage());
         }
         finally {
             if(httpResponse != null) {

@@ -1,6 +1,6 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.GraphException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

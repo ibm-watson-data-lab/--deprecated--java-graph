@@ -1,7 +1,7 @@
 package com.ibm.graph.client;
 
 import com.ibm.graph.client.schema.PropertyKey;
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.GraphException;
 
 import org.junit.Test;
 import org.slf4j.Logger;

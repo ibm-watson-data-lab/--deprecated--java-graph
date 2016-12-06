@@ -1,4 +1,4 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.exception;
 
 
 /**
