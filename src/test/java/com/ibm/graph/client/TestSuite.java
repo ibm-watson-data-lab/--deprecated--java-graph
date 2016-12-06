@@ -56,11 +56,14 @@ public class TestSuite {
                                                         envs.get("TEST_API_URL").toString(),
                                                         envs.get("TEST_USERNAME").toString(),
                                                         envs.get("TEST_PASSWORD").toString());
-           logger.info("Created graphClient instance.");
+           logger.debug("Created graphClient instance.");
+           graphId = TestSuite.graphClient.getGraphId();
+           logger.debug("Current graph id: " + graphId);
         }
         catch(Exception ex) {
-            logger.error("Error creating IBMGraphClient", ex);   
+            logger.error("Error creating IBMGraphClient: ", ex);   
             TestSuite.graphClient = null;
+            System.exit(1);
         }
     }
 
@@ -68,11 +71,11 @@ public class TestSuite {
     public static void teardown() {
         if(TestSuite.graphClient != null) {
            try {
-                logger.debug(String.format("Deleting graph with ID %s",graphId));
-                TestSuite.graphClient.deleteGraph(graphId);
+                logger.info("Switching to graph " + graphId);
+                TestSuite.graphClient.setGraph(graphId);
             }
             catch(Exception ex) {
-                logger.error("Error deleting graph " + graphId + ": ", ex);
+                logger.error("Error switching to graph " + graphId + ": ", ex);
             }
             TestSuite.graphClient = null;
         }
