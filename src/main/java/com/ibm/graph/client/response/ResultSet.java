@@ -247,4 +247,8 @@ public class ResultSet {
 		return this.response;
 	}
 
+	public String toString() {
+		return null; // TODO
+	}
+
 }

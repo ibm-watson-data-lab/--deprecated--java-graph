@@ -1,7 +1,7 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.schema;
 
 import com.ibm.graph.client.schema.VertexLabel;
-import com.ibm.graph.client.GraphException;
+import com.ibm.graph.client.exception.GraphException;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,7 +15,8 @@ import java.util.HashMap;
 import static org.junit.Assert.*;
 
 /**
- * Created by markwatson on 11/28/16.
+ * Test scope:
+ * - com.ibm.graph.client.schema.VertexLabel
  */
 public class VertexLabelTests {
 

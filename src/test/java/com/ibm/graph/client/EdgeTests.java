@@ -1,7 +1,7 @@
 package com.ibm.graph.client;
 
 import com.ibm.graph.client.Edge;
-import com.ibm.graph.client.GraphException;
+import com.ibm.graph.client.exception.GraphException;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -417,6 +417,7 @@ public class EdgeTests {
         // edge no longer exists, fail silently
         assertFalse("TestSuite.graphClient.deleteEdge(e1.getId()) second invocation", TestSuite.graphClient.deleteEdge(e1.getId()));
 
+
         // cleanup
         assertTrue(TestSuite.graphClient.deleteVertex(v1.getId()));
         assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));        
@@ -438,7 +439,21 @@ public class EdgeTests {
             assertFalse("TestSuite.graphClient.deleteEdge(null) unexpected exception: " + ex.getMessage(), true);   
         }        
 
-        // delete a non-existing edge
-        assertFalse("TestSuite.graphClient.deleteEdge(123456789)", TestSuite.graphClient.deleteEdge(123456789));
+        try {
+            // delete a non-existing edge
+            assertFalse("TestSuite.graphClient.deleteEdge(123456789)", TestSuite.graphClient.deleteEdge(123456789));
+            // pass
+        }
+        catch(GraphException gex) {
+            // fail
+            logger.error("TestSuite.graphClient.deleteEdge(123456789) unexpected exception.", gex.toString());
+            assertFalse("TestSuite.graphClient.deleteEdge(123456789) unexpected GraphException: " + gex.getMessage(), true);   
+        }
+        catch(Exception ex) {
+            // fail
+            logger.error("TestSuite.graphClient.deleteEdge(123456789) unexpected exception.", ex);
+            assertFalse("TestSuite.graphClient.deleteEdge(123456789) unexpected exception: " + ex.getMessage(), true);   
+        }
+
     } 
 }

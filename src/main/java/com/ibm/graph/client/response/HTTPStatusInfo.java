@@ -3,17 +3,17 @@ package com.ibm.graph.client.response;
 
 public class HTTPStatusInfo {
 	
-	protected short code;
+	protected int code;
 	protected String reason;
 
-	protected HTTPStatusInfo(short code, String reason) throws IllegalArgumentException {
+	public HTTPStatusInfo(int code, String reason) throws IllegalArgumentException {
 		if(code < 100)
 			throw new IllegalArgumentException(code + " is not a valid HTTP status code.");
 		this.code = code;
 		this.reason = reason;
 	}
 
-	public short getStatusCode() {
+	public int getStatusCode() {
 		return this.code;
 	}
 
@@ -40,5 +40,8 @@ public class HTTPStatusInfo {
 	public boolean isServerErrorResponse() {
 		return (this.code >= 500);
 	}
-	
+
+	public String toString() {
+		return "HTTP code: " + this.code + " HTTP reason: \"" + this.reason + "\"";
+	}
 }

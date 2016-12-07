@@ -3,6 +3,7 @@ package com.ibm.graph.client;
 import com.ibm.graph.client.exception.GraphException;
 import com.ibm.graph.client.exception.GraphClientException;
 import com.ibm.graph.client.response.GraphResponse;
+import com.ibm.graph.client.response.HTTPStatusInfo;
 import com.ibm.graph.client.schema.Schema;
 import com.ibm.graph.client.response.ResultSet;
 
@@ -168,7 +169,7 @@ public class IBMGraphClient {
             this.apiURL = String.format("%s/%s",this.baseURL,this.graphId);
         }
         else {
-            throw new GraphException("No graph with name " + graphId + " is defined.");
+            throw new GraphException("Graph " + graphId + " was not found.", new HTTPStatusInfo(404, "Not Found"), null, null);
         }
     }
 
@@ -188,28 +189,29 @@ public class IBMGraphClient {
             if(response.getHTTPStatus().isSuccessResponse()) {
                 JSONObject result = response.getResultSet().getResultAsJSONObject(0);
                 // {"graphs":["1...3","1","g","zzz"]}
+                List<String> graphIds = new ArrayList<>();
                 if(result.has("graphs")) {
                     JSONArray data = result.getJSONArray("graphs");    
-                    List<String> graphIds = new ArrayList<>();
                     if (data.length() > 0) {
                         for(int i=0; i<data.length(); i++) {
                             graphIds.add(data.getString(i));
                         }
                     }
-                    return graphIds.toArray(new String[0]);
                 }
+                return graphIds.toArray(new String[0]);
             }
             else {
-                // IBM Graph returned an error
-                throw new GraphException(response.getGraphStatus(), response.getHTTPStatus());
+                throw new GraphException("Error fetching graph list.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
             }
         }
         catch(GraphClientException gcex) {
             throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }        
         catch(Exception ex) {
-            logger.error("Error getting list of graphs: ", ex);
-            throw new GraphException("Error getting list of graphs: " + ex.getMessage());
+            throw new GraphClientException("Error getting list of graphs.", ex);
         }
     }
 
@@ -249,12 +251,12 @@ public class IBMGraphClient {
                 }
                 else {
                     // the response does not contain a graph name; raise error
-                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed. No graph id was returned.");
+                    throw new GraphClientException("Graph " + graphId + " was created. IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
                 }
             }
             else {
                 // IBM Graph returned an error
-                throw new GraphException(response.getGraphStatus(), response.getHTTPStatus());
+                throw new GraphException("Error creating graph " + graphId + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
             }
         }
         catch(GraphClientException gcex) {
@@ -264,7 +266,7 @@ public class IBMGraphClient {
             throw gex;
         }
         catch(Exception ex) {
-            throw new GraphClientException("An exception was caught trying to create a graph:" + ex.getMessage(), ex);               
+            throw new GraphClientException("Error creating graph " + graphId + ".", ex);               
         }
     }
 
@@ -293,17 +295,18 @@ public class IBMGraphClient {
                 if(response.getHTTPStatus().getStatusCode() == 404) {
                     // graph not found. don't treat this as an error
                     return false;
-                }
-                   
-                // unknown status code; raise error
-                throw new GraphClientException("The graph could not be deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }       
+                throw new GraphException("Error deleting graph " + graphId + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
             }
         }
         catch(GraphClientException gcex) {
             throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }        
         catch(Exception ex) {
-            throw new GraphClientException("An exception was caught trying to delete a graph:" + ex.getMessage(), ex);               
+            throw new GraphClientException("Error deleting graph " + graphId + ".", ex);
         }
     }
 
@@ -338,13 +341,17 @@ public class IBMGraphClient {
                 else {
                     throw new GraphClientException("IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
                 }
-            }    
+            }
+            throw new GraphException("Error getting schema.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
         }
         catch(GraphClientException gcex) {
             throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }                
         catch(Exception ex) {
-            throw new GraphClientException("An exception was caught trying to fetch the schema:" + ex.getMessage(), ex); 
+            throw new GraphClientException("Error getting schema.", ex);
         }
     }
 
@@ -371,13 +378,8 @@ public class IBMGraphClient {
                     throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
                 }
             }
-            else {
-                if(response.getHTTPStatus().isClientErrorResponse()) {
-                    throw new GraphException("The schema could not be saved.", response.getGraphStatus(), response.getHTTPStatus());
-                }
-                else 
-                    throw new GraphClientException("The schema could not be saved. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
-            }               
+            else 
+                throw new GraphException("Error saving schema.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
         }  
         catch(GraphClientException gcex) {
             throw gcex;
@@ -386,7 +388,7 @@ public class IBMGraphClient {
             throw gex;
         }
         catch(Exception ex) {
-            throw new GraphClientException("An exception was caught trying to save the schema:" + ex.getMessage(), ex); 
+            throw new GraphClientException("Error saving schema.", ex);            
         }
     }
 
@@ -401,10 +403,11 @@ public class IBMGraphClient {
      * Deletes an index in the current graph.
      * @param indexName name of an existing index
      * @return true if indexName was removed
-     * @throws IllegalArgumentException if schema is null or an empty string     
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client 
      * @throws GraphException if the index could not be deleted 
      */
-    public boolean deleteIndex(String indexName) throws GraphException, IllegalArgumentException {
+    public boolean deleteIndex(String indexName) throws GraphException, GraphClientException, IllegalArgumentException {
        if((indexName == null) || (indexName.trim().length() == 0))
             throw new IllegalArgumentException("Parameter indexName is null or empty.");
         try {
@@ -415,18 +418,21 @@ public class IBMGraphClient {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
-                    throw new GraphClientException("The index was deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                    throw new GraphClientException("Index " + indexName + " was deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
                 }
             }
             else {
-                throw new GraphClientException("The index could not be deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                throw new GraphException("Error deleting index " + indexName + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
             }
         }  
         catch(GraphClientException gcex) {
             throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }                
         catch(Exception ex) {
-            throw new GraphClientException("An exception was caught trying to delete the index named " + indexName + " :" + ex.getMessage(), ex); 
+            throw new GraphClientException("Error deleting index " + indexName + ".", ex);            
         }            
     }
 
@@ -444,35 +450,40 @@ public class IBMGraphClient {
      * Gets the vertex identified by id from the current graph.
      * @param id vertex id
      * @return com.ibm.graph.client.Vertex or null if no vertex with the specified id exists
-     * @throws GraphException if an error (other than "not found") occurred
-     * @throws GraphClientException if an error (other than "not found") occurred     
-     * @throws IllegalArgumentException id is null 
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException id if is null 
      */
     public Vertex getVertex(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
         if(id == null)
-            throw new IllegalArgumentException("id parameter is missing");
+            throw new IllegalArgumentException("Parameter id null.");
         try {
             String url = String.format("%s/vertices/%s",this.apiURL,id);
-            ResultSet rs = new ResultSet(this.doHttpGet(url));
-            if(rs.hasResults()) {
-                return rs.getResultAsVertex(0);
+
+            GraphResponse response = this.doHttpGet(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsVertex(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
             else {
-                // check status to determine whether no result was returned because the vertex was not found
-                if("NotFoundError".equalsIgnoreCase(rs.getStatusCode()))
+                if(response.getHTTPStatus().getStatusCode() == 404) {
+                    // vertex not found. don't treat this as an error
                     return null;
-
-                // Notify caller that we cannnot determine why the edge could not be retrieved; manual troubleshooting is required
-                logger.error("GET " + url + " result set info: " + rs.toString());
-                throw new GraphException("GET " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }
+                }
+                throw new GraphException("Error getting vertex " + id + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
+            }     
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error fetching vertex with id " + id + ": ", ex);
-            throw new GraphException("Error fetching vertex with id " + id + ": " + ex.getMessage());  
+            throw new GraphClientException("Error fetching vertex " + id + ".", ex);
         } 
     }
 
@@ -480,30 +491,35 @@ public class IBMGraphClient {
      * Adds a vertex to the current graph.
      * @param vertex the vertex to be added
      * @return Vertex the vertex object, as returned by IBM Graph, or null
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException vertex is null      
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException id if is null   
      */
-    public Vertex addVertex(Vertex vertex) throws GraphException, IllegalArgumentException {
+    public Vertex addVertex(Vertex vertex) throws GraphException, GraphClientException, IllegalArgumentException {
         if(vertex == null)
-            throw new IllegalArgumentException("vertex parameter is missing");
+            throw new IllegalArgumentException("Parameter vertex is null.");
         try {
             String url = this.apiURL + "/vertices";
-            ResultSet rs = new ResultSet(this.doHttpPost(vertex, url));
-            // if the vertex was successfully created it can be accessed as the first result in the result set
-            if(rs.hasResults()) {
-                return rs.getResultAsVertex(0);
+
+            GraphResponse response = this.doHttpPost(vertex, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsVertex(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
-            else {
-                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
-                logger.debug("POST " + url + " result set info: " + rs.toString());
-                throw new GraphException("POST " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }            
+            else 
+                throw new GraphException("Error adding vertex.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());        
         }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }        
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            throw new GraphException("Error adding vertex: " + ex.getMessage(), ex);              
+            throw new GraphClientException("Error adding vertex.", ex);              
         }
     }
 
@@ -511,61 +527,82 @@ public class IBMGraphClient {
      * Updates existing vertex &lt;vertex&gt; by deleting previous properties and replacing them with properties specified as key-value pairs. Vertex labels and IDs are immutable.
      * @param vertex the vertex to be updated
      * @return Vertex the vertex object, as returned by IBM Graph, or null
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException vertex is null or does not contain an id  
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if vertex is null or does not contain the id property  
      */
-    public Vertex updateVertex(Vertex vertex) throws GraphException, IllegalArgumentException {
+    public Vertex updateVertex(Vertex vertex) throws GraphException, GraphClientException, IllegalArgumentException {
        if(vertex == null)
-            throw new IllegalArgumentException("vertex parameter is missing");            
+            throw new IllegalArgumentException("Parameter vertex is null.");           
        if(vertex.getId() == null)
-            throw new IllegalArgumentException("vertex parameter does not contain the id property");
+            throw new IllegalArgumentException("Parameter vertex does not contain the id property.");
         try {
             String url = this.apiURL + "/vertices/" + vertex.getId();
             // create the payload         
             JSONObject payload = new JSONObject();
             payload.put("properties", vertex.getProperties());
-            ResultSet rs = new ResultSet(this.doHttpPut(payload, url));
-            // if the vertex was successfully updated it can be accessed as the first result in the result set
-            if(rs.hasResults()) {
-                return rs.getResultAsVertex(0);
+
+            GraphResponse response = this.doHttpPut(payload, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsVertex(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
-            else {
-                // Notify caller that we cannnot determine why the vertex information was not returned; manual troubleshooting is required
-                logger.debug("PUT " + url + " result set info: " + rs.toString());
-                throw new GraphException("PUT " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }    
+            else 
+                throw new GraphException("Error updating vertex " + vertex.getId() + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
         }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }   
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error updating vertex: ", ex);
-            throw new GraphException("Error updating vertex: " + ex.getMessage(), ex);              
+            throw new GraphClientException("Error updating vertex " + vertex.getId() + ".", ex);
         }
     }
 
     /**
      * Removes the vertex identified by id from the current graph.
-     * @param id id of the vertex to be removed
-     * @return true if the vertex with the specified id was removed
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException if id is null
+     * @param id of the vertex to be removed
+     * @return true if the vertex with the specified id was removed or false if it was not found
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if id is null 
      */
-    public boolean deleteVertex(Object id) throws GraphException, IllegalArgumentException {
+    public boolean deleteVertex(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
         if(id == null)
-            throw new IllegalArgumentException("id parameter is missing");
+            throw new IllegalArgumentException("Parameter vertex is null.");  
         try {
             String url = this.apiURL + "/vertices/" + id;
-            ResultSet rs = new ResultSet(this.doHttpDelete(url));
-            if(rs.hasResults()) {
-                return rs.getResultAsBoolean(0).booleanValue();
+
+            GraphResponse response = this.doHttpDelete(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("Vertex " + id + " was deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
             }
-            return false;
+            else {
+                if(response.getHTTPStatus().getStatusCode() == 404) {
+                    // vertex not found. don't treat this as an error
+                    return false;
+                }       
+                throw new GraphClientException("Vertex " + id + " was not deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+            }
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }        
         catch(Exception ex) {
-            logger.debug("Error deleting vertex with id " + id + ": ", ex);
-            throw new GraphException("Error deleting vertex with id " + id + ": " + ex.getMessage());          
-        }                
+            throw new GraphClientException("Error deleting vertex " + id + ".", ex);            
+        }            
     }
 
     /*
@@ -582,34 +619,40 @@ public class IBMGraphClient {
      * Gets the edge identified by id from the current graph.
      * @param id edge id
      * @return com.ibm.graph.client.Edge or null if no edge with the specified id exists
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException id is null 
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if id is null 
      */
-    public Edge getEdge(Object id) throws GraphException, IllegalArgumentException {
+    public Edge getEdge(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
         if(id == null)
-            throw new IllegalArgumentException("id parameter is missing");
+            throw new IllegalArgumentException("Parameter id is null.");  
         try {
             String url = String.format("%s/edges/%s",this.apiURL,id);
-            ResultSet rs = new ResultSet(this.doHttpGet(url));
-            if(rs.hasResults()) {
-                return rs.getResultAsEdge(0);
+
+            GraphResponse response = this.doHttpGet(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsEdge(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
             else {
-                // check status to determine whether no result was returned because the edge was not found
-                if("NotFoundError".equalsIgnoreCase(rs.getStatusCode()))
+                if(response.getHTTPStatus().getStatusCode() == 404) {
+                    // edge not found. don't treat this as an error
                     return null;
-
-                // Notify caller that we cannnot determine why the edge could not be retrieved; manual troubleshooting is required
-                logger.error("GET " + url + " result set info: " + rs.toString());
-                throw new GraphException("GET " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
+                }
+                throw new GraphException("Error getting edge " + id + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
             }
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(GraphException gex) {
             throw gex;
-        }
+        }        
         catch(Exception ex) {
-            logger.error("Error fetching edge with id " + id + ": ", ex);
-            throw new GraphException("Error fetching edge with id " + id + ": " + ex.getMessage());  
+            throw new GraphClientException("Error getting edge " + id + ".", ex);            
         } 
     }
 
@@ -617,93 +660,115 @@ public class IBMGraphClient {
      * Adds an edge to the current graph.
      * @param edge the edge to be added
      * @return Edge the edge object, as returned by IBM Graph
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException edge is null     
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if id is null    
      */
-    public Edge addEdge(Edge edge) throws GraphException, IllegalArgumentException {
+    public Edge addEdge(Edge edge) throws GraphException, GraphClientException, IllegalArgumentException {
         if(edge == null)
-            throw new IllegalArgumentException("edge parameter is missing");
+            throw new IllegalArgumentException("Parameter edge is null.");  
         try {
             String url = this.apiURL + "/edges";
-            ResultSet rs = new ResultSet(this.doHttpPost(edge, url));
-            // if the edge was successfully created it can be accessed as the first result in the result set
-            if(rs.hasResults()) {
-                return rs.getResultAsEdge(0);
+
+            GraphResponse response = this.doHttpPost(edge, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsEdge(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
-            else {
-                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
-                logger.debug("POST " + url + " result set info: " + rs.toString());
-                throw new GraphException("POST " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }            
+            else 
+                throw new GraphException("Error adding edge.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
         }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }        
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error adding edge: ", ex);
-            throw new GraphException("Error adding edge: " + ex.getMessage(), ex);              
-        }        
+            throw new GraphClientException("Error adding vertex.", ex);              
+        }
     }
 
     /**
      * Updates the properties of an existing edge in the current graph. The incident vertices and edge label cannot be changed.
      * @param edge the edge to be updated
-     * @return Edge the edgex object, as returned by IBM Graph, or null
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException edge is null     
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if edge is null or does not contain the id property      
      */
-    public Edge updateEdge(Edge edge) throws GraphException, IllegalArgumentException {
+    public Edge updateEdge(Edge edge) throws GraphException, GraphClientException, IllegalArgumentException {
        if(edge == null)
-            throw new IllegalArgumentException("edge parameter is missing");
+            throw new IllegalArgumentException("Parameter edge is null.");           
        if(edge.getId() == null)
-            throw new IllegalArgumentException("edge parameter does not contain the id property");
+            throw new IllegalArgumentException("Parameter edge does not contain the id property.");
         try {
             String url = this.apiURL + "/edges/" + edge.getId();
             // create the payload         
             JSONObject payload = new JSONObject();
-            payload.put("properties", edge.getProperties());
-            ResultSet rs = new ResultSet(this.doHttpPut(payload, url));
-            // if the edge was successfully updated it can be accessed as the first result in the result set
-            if(rs.hasResults()) {
-                return rs.getResultAsEdge(0);
+            payload.put("properties", edge.getProperties());            
+            GraphResponse response = this.doHttpPut(payload, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsEdge(0);
+                else {
+                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                }
             }
-            else {
-                // Notify caller that we cannnot determine why the edge information was not returned; manual troubleshooting is required
-                logger.debug("PUT " + url + " result set info: " + rs.toString());
-                throw new GraphException("PUT " + url + " API call returned code: " + rs.getStatusCode() + " message: " + rs.getStatusMessage());
-            }    
+            else 
+                throw new GraphException("Error updating edge " + edge.getId() + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
         }
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }   
         catch(GraphException gex) {
             throw gex;
         }
         catch(Exception ex) {
-            logger.error("Error updating edge: ", ex);
-            throw new GraphException("Error updating edge: " + ex.getMessage(), ex);              
+            throw new GraphClientException("Error updating edge " + edge.getId() + ".", ex);
         }
     }
 
     /**
      * Removes an edge from the current graph.
-     * @param id id of the edge to be removed
-     * @return true if the edge with the specified id was removed
-     * @throws GraphException if an error occurred
-     * @throws IllegalArgumentException id is null
+     * @return true if the edge with the specified id was removed, false if it was not found
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client    
+     * @throws IllegalArgumentException if id is null 
      */
-    public boolean deleteEdge(Object id) throws GraphException, IllegalArgumentException {
+    public boolean deleteEdge(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
         if(id == null)
-            throw new IllegalArgumentException("id parameter is missing"); 
+            throw new IllegalArgumentException("Parameter id is null.");  
         try {
             String url = this.apiURL + "/edges/" + id;
-            ResultSet rs = new ResultSet(this.doHttpDelete(url));
-            if(rs.hasResults()) {
-                return rs.getResultAsBoolean(0).booleanValue();
+            GraphResponse response = this.doHttpDelete(url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("Edge " + id + " was deleted. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
             }
-            return false;
+            else {
+                if(response.getHTTPStatus().getStatusCode() == 404) {
+                    // edge not found. don't treat this as an error
+                    return false;
+                }       
+
+                throw new GraphException("Error deleting edge " + id + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
+        catch(GraphException gex) {
+            throw gex;
+        }        
         catch(Exception ex) {
-            logger.debug("Error deleting edge with id " + id + ": ", ex);
-            throw new GraphException("Error deleting edge with id " + id + ": " + ex.getMessage());          
-        }                
+            throw new GraphClientException("Error deleting edge " + id + ".", ex);            
+        }            
     }
 
     /*
@@ -721,16 +786,16 @@ public class IBMGraphClient {
      * Loads graphSON string into the graph
      * @param graphson data to be loaded
      * @return boolean true if the data was loaded
-     * @throws GraphClientException if an error occurred
-     * @throws GraphException if an error occurred
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client         
      * @throws IllegalArgumentException if graphson is an empty String or exceeds 10MB
      */
     public boolean loadGraphSON(String graphson) throws GraphException, GraphClientException, IllegalArgumentException {
         if((graphson == null) || (graphson.trim().length() == 0)){
-            throw new IllegalArgumentException("graphson parameter is missing or empty.");
+            throw new IllegalArgumentException("Parameter graphson is null or empty.");
         }
         if(graphson.length() > 10485760) { // (10 * 1024 * 1024)
-            throw new IllegalArgumentException("graphson parameter value exceeds maximum length (10MB).");
+            throw new IllegalArgumentException("Parameter graphson exceeds maximum length (10MB).");
         }
         if (this.gdsTokenAuth == null) {
             this.initSession();
@@ -745,29 +810,35 @@ public class IBMGraphClient {
             meb.addPart("graphson", new StringBody(graphson,ContentType.MULTIPART_FORM_DATA));
             httpPost.setEntity(meb.build());
 
-            // TODO debug request parameters
-            // if (logger.isDebugEnabled()) {
-            //    logger.debug(String.format("Making HTTP POST request to %s; payload=%s", httpPost.toString()));
-            //}
-
-            ResultSet rs = new ResultSet(doHttpRequest(httpPost));
-            if("200".equals(rs.getStatusCode()) && (rs.hasResults()) && ("true".equals(rs.getResultAsString(0)))) {
-                return true;
+            GraphResponse response = this.doHttpRequest(httpPost);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("Graphson was loaded. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
             }
-            return false;
-        }
-        catch(Exception ex) {
-            logger.error("Error loading graphSON into graph: ", ex);
-            throw new GraphException("Error loading graphSON into graph: " + ex.getMessage());          
+            else {
+                throw new GraphException("Error loading graphson.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }
         }  
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
+        catch(Exception ex) {
+            throw new GraphClientException("Error loading graphson.", ex);            
+        } 
     } 
 
     /**
      * Loads graphSON from filename into the graph
      * @param filename file containing graphSON
      * @return boolean true if the data was loaded
-     * @throws GraphClientException if an error occurred
-     * @throws GraphException if an error occurred
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client  
      * @throws IllegalArgumentException if filename does not identify a valid file (exists, is readable and less than 10MB in size)
      */
     public boolean loadGraphSONfromFile(String filename) throws GraphException, GraphClientException, IllegalArgumentException {
@@ -797,21 +868,27 @@ public class IBMGraphClient {
             meb.addPart("graphson", fb);
             httpPost.setEntity(meb.build());
 
-            // TODO debug request parameters
-            // if (logger.isDebugEnabled()) {
-            //    logger.debug(String.format("Making HTTP POST request to %s; payload=%s", httpPost.toString()));
-            //}
-
-            ResultSet rs = new ResultSet(doHttpRequest(httpPost));
-            if("200".equals(rs.getStatusCode()) && (rs.hasResults()) && ("true".equals(rs.getResultAsString(0)))) {
-                return true;
+            GraphResponse response = this.doHttpRequest(httpPost);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("Graphson was loaded. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
             }
-            return false;
-        }
-        catch(Exception ex) {
-            logger.error("Error loading graphSON into graph: ", ex);
-            throw new GraphException("Error loading graphSON into graph: " + ex.getMessage());          
+            else {
+                throw new GraphException("Error loading graphson.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }
         }  
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
+        catch(Exception ex) {
+            throw new GraphClientException("Error loading graphson.", ex);            
+        } 
     } 
 
     /*
@@ -825,10 +902,11 @@ public class IBMGraphClient {
      * Runs the specified Gremlin 
      * @param gremlin the traversal to be performed
      * @return ResultSet the result of the graph traversal
-     * @throws GraphException if an error occurred
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client  
      * @throws IllegalArgumentException gremlin is null or an empty string
      */
-    public ResultSet executeGremlin(String gremlin) throws GraphException, IllegalArgumentException {
+    public ResultSet executeGremlin(String gremlin) throws GraphException, GraphClientException, IllegalArgumentException {
         return executeGremlin(gremlin, null);
     }
 
@@ -837,12 +915,13 @@ public class IBMGraphClient {
      * @param gremlin the traversal to be performed
      * @param bindings optional gremlin bindings. 
      * @return ResultSet the result of the graph traversal
-     * @throws GraphException if an error occurred
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client  
      * @throws IllegalArgumentException gremlin is null or an empty string or bindings is an empty string
      */
-    public ResultSet executeGremlin(String gremlin, HashMap<String, Object> bindings) throws GraphException, IllegalArgumentException {
+    public ResultSet executeGremlin(String gremlin, HashMap<String, Object> bindings) throws GraphException, GraphClientException, IllegalArgumentException {
         if((gremlin == null) || (gremlin.trim().length() == 0)) {
-            throw new IllegalArgumentException("gremlin parameter is null or empty.");
+            throw new IllegalArgumentException("Parameter gremlin is null or empty.");
         }
         
         if (logger.isDebugEnabled()) {
@@ -854,14 +933,26 @@ public class IBMGraphClient {
             postData.put("gremlin", String.format("def g = graph.traversal(); %s",gremlin));
             if((bindings != null) && (! bindings.isEmpty()))
                 postData.put("bindings", bindings);
-            return new ResultSet(this.doHttpPost(postData, url));
-        }
-        catch(Exception ex) {
-            logger.error("Error executing gremlin \"" + gremlin + "\" bindings: " + bindings, ex);
-            throw new GraphException("Error processing gremlin " + gremlin + ": " + ex.getMessage());               
-        }
-    }    
 
+            GraphResponse response = this.doHttpPost(postData, url);
+            if(response.getHTTPStatus().isSuccessResponse()) {
+                return response.getResultSet();
+            }
+           else {
+                throw new GraphException("Error executing gremlin.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }            
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
+        catch(Exception ex) {
+            throw new GraphClientException("Error loading graphson.", ex);            
+        } 
+
+    }    
 
     /*
      * ----------------------------------------------------------------
@@ -874,7 +965,7 @@ public class IBMGraphClient {
      * ----------------------------------------------------------------     
      */
 
-    private GraphResponse doHttpGet(String url) throws GraphClientException {
+    private GraphResponse doHttpGet(String url) throws GraphException, GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -885,7 +976,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpGet);
     }
 
-    private GraphResponse doHttpPost(JSONObject json, String url) throws GraphClientException {
+    private GraphResponse doHttpPost(JSONObject json, String url) throws GraphException, GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -899,7 +990,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpPost);
     }
 
-    private GraphResponse doHttpPut(JSONObject json, String url) throws GraphClientException {
+    private GraphResponse doHttpPut(JSONObject json, String url) throws GraphException, GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -913,7 +1004,7 @@ public class IBMGraphClient {
         return doHttpRequest(httpPut);
     }
 
-    private GraphResponse doHttpDelete(String url) throws GraphClientException {
+    private GraphResponse doHttpDelete(String url) throws GraphException, GraphClientException {
         if (this.gdsTokenAuth == null) {
             this.initSession();
         }
@@ -949,8 +1040,8 @@ public class IBMGraphClient {
                                        content));  
 
             // assemble response information
-            GraphResponse response = new GraphResponse(new HTTPResponseInfo(httpResponse.getStatusLine().getStatusCode(),
-                                                                            httpResponse.getStatusLine().getReasonPhrase()),
+            GraphResponse response = new GraphResponse(new HTTPStatusInfo(httpResponse.getStatusLine().getStatusCode(),
+                                                                          httpResponse.getStatusLine().getReasonPhrase()),
                                                        content);
             return response;
         }

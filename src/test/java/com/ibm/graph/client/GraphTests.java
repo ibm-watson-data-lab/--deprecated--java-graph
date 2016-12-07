@@ -1,6 +1,6 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.client.GraphException;
+import com.ibm.graph.client.exception.GraphException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -19,6 +19,14 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
 
+/**
+ * Test scope:
+ * - graphClient.getGraphId
+ * - graphClient.getGraphs
+ * - graphClient.createGraph
+ * - graphClient.setGraph
+ * - graphClient.deleteGraph
+ */
 public class GraphTests {
 
     private static List<String> graphsCreated;
@@ -188,7 +196,10 @@ public class GraphTests {
     public void setGraph() throws Exception {
         logger.info("Executing graphClient.setGraph(...) test.");
         try {
-
+            String currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            TestSuite.graphClient.setGraph(currentGraphId);
+            assertEquals(currentGraphId, TestSuite.graphClient.getGraphId());
         }
         catch(Exception ex) {
             logger.error("Unexpected exception was caught: ", ex);
@@ -264,7 +275,6 @@ public class GraphTests {
             String[] graphIds = TestSuite.graphClient.getGraphs();
             assertNotNull(graphIds);
             assertThat(Arrays.asList(graphIds), not(hasItems(graphId)));
-
         }
         catch(Exception ex) {
             logger.error("Unexpected exception was caught: ", ex);
@@ -323,23 +333,5 @@ public class GraphTests {
             logger.error("Unexpected exception was caught: ", ex);
             assertFalse(true);
         }
-    }
-
-
-    @Test
-    public void createGraphRandomId() throws Exception {
-        logger.info("Executing graphClient.createGraph(...) test.");
-
-        // create a graph, verify it exists, but don't delete it (it will be used for the rest of the tests)
-        String randomGraphId = UUID.randomUUID().toString();
-        String graphId = TestSuite.graphClient.createGraph(randomGraphId);
-        assertEquals(randomGraphId, graphId);
-        // verify graph exits
-        String[] graphIds = TestSuite.graphClient.getGraphs();
-        assertNotNull(graphIds);
-        assertThat(Arrays.asList(graphIds), hasItems(graphId));
-        // set the global graph id for the rest of the tests
-        TestSuite.setGlobalGraphId(graphId);
-        assertEquals(TestSuite.graphClient.getGraphId(), graphId);
     }
 }

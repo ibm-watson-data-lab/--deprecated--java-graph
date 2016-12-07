@@ -15,19 +15,23 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        PropertyKeyTests.class,
-        EntityLabelTests.class,
-        EdgeLabelTests.class,
-        VertexLabelTests.class,
-        EntityIndexTests.class,
-        VertexIndexTests.class,
-        EdgeIndexTests.class,
-        ResultSetTests.class,
+        com.ibm.graph.client.exception.GraphExceptionTests.class,
+        com.ibm.graph.client.response.GraphStatusInfoTests.class,
+        com.ibm.graph.client.response.GraphResponseTests.class,
+        com.ibm.graph.client.schema.PropertyKeyTests.class,
+        com.ibm.graph.client.schema.EntityLabelTests.class,
+        com.ibm.graph.client.schema.EdgeLabelTests.class,
+        com.ibm.graph.client.schema.VertexLabelTests.class,
+        com.ibm.graph.client.schema.EntityIndexTests.class,
+        com.ibm.graph.client.schema.VertexIndexTests.class,
+        com.ibm.graph.client.schema.EdgeIndexTests.class,
+        com.ibm.graph.client.response.ResultSetTests.class,
         GraphTests.class,
-        SchemaTests.class,
+        com.ibm.graph.client.schema.SchemaTests.class,
         VertexTests.class,
         EdgeTests.class,
         GremlinTests.class
+        
 })
 public class TestSuite {
 
@@ -56,7 +60,7 @@ public class TestSuite {
                                                         envs.get("TEST_API_URL").toString(),
                                                         envs.get("TEST_USERNAME").toString(),
                                                         envs.get("TEST_PASSWORD").toString());
-           logger.debug("Created graphClient instance.");
+           logger.info("Created graphClient instance.");
            graphId = TestSuite.graphClient.getGraphId();
            logger.debug("Current graph id: " + graphId);
         }

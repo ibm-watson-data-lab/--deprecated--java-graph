@@ -1,6 +1,6 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.ResultSet;
+import com.ibm.graph.client.response.ResultSet;
 import com.ibm.graph.client.schema.*;
 
 import org.junit.AfterClass;
@@ -18,7 +18,8 @@ import org.apache.wink.json4j.JSONObject;
 import static org.junit.Assert.*;
 
 /**
- * Created by markwatson on 11/28/16.
+ * Test scope:
+ * - graphClient.executeGremlin
  */
 public class GremlinTests {
 
@@ -238,7 +239,46 @@ public class GremlinTests {
         //
         // parameter checking (gremlin + bindings)
         //
-        // TODO
+        String graphId = null;
+        String currentGraphId = null;
+
+        try {
+            // setup ...
+            currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph(); 
+            assertNotNull(graphId);
+            graphsCreated.add(graphId); 
+
+            // the graph should not be in use yet
+            assertNotEquals(graphId, TestSuite.graphClient.getGraphId());
+            // switch to graph
+            TestSuite.graphClient.setGraph(graphId);
+            assertEquals(graphId, TestSuite.graphClient.getGraphId());        
+
+            // TODO
+
+        }       
+        catch(Exception ex) {
+            logger.error("Unexpected exception was caught: ", ex);
+            assertFalse(true);
+        }
+        finally {
+            // cleanup ...
+            if(currentGraphId != null) {             
+                try {
+                    TestSuite.graphClient.setGraph(currentGraphId); 
+                    if(graphId != null)  {
+                        TestSuite.graphClient.deleteGraph(graphId);
+                        graphsCreated.remove(graphId);   
+                    } 
+                }
+                catch(Exception ex) {
+                    // ignore
+                }
+            }
+        }
 
     }
 }

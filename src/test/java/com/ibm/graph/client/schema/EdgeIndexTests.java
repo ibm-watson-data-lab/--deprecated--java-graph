@@ -1,7 +1,7 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.schema;
 
-import com.ibm.graph.client.schema.VertexIndex;
-import com.ibm.graph.client.GraphException;
+import com.ibm.graph.client.schema.EdgeIndex;
+import com.ibm.graph.client.exception.GraphException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,75 +18,76 @@ import java.util.HashMap;
 import static org.junit.Assert.*;
 
 /**
- * Created by markwatson on 11/28/16.
+ * Test scope:
+ * - class com.ibm.graph.client.schema.EdgeIndex
  */
-public class VertexIndexTests {
+public class EdgeIndexTests {
 
-    private static Logger logger =  LoggerFactory.getLogger(VertexIndexTests.class);
+    private static Logger logger =  LoggerFactory.getLogger(EdgeIndexTests.class);
 
     @Test
-    public void testVertexIndexClass() throws Exception {
-        logger.info("Executing tests for class com.ibm.graph.client.schema.VertexIndex");
-        VertexIndex vi = null;
+    public void testEdgeIndexClass() throws Exception {
+        logger.info("Executing tests for class com.ibm.graph.client.schema.EdgeIndex");
+        EdgeIndex ei = null;
         try {
  
             boolean composite = true;
             boolean unique = false;
             String[] propertyKeys = new String[]{"name"};
-            String indexName = "byName";
+            String indexName = "marriedTo";
 
             // constructor
-            vi = new VertexIndex(indexName, propertyKeys, composite, unique);
-            assertNotNull(vi);
-            assertEquals(indexName, vi.getName());
-            assertEquals(composite, vi.isComposite());
-            assertEquals(unique, vi.isUnique());
-            assertEquals(propertyKeys.toString(), vi.getPropertyKeys().toString());
+            ei = new EdgeIndex(indexName, propertyKeys, composite, unique);
+            assertNotNull(ei);
+            assertEquals(indexName, ei.getName());
+            assertEquals(composite, ei.isComposite());
+            assertEquals(unique, ei.isUnique());
+            assertEquals(propertyKeys.toString(), ei.getPropertyKeys().toString());
 
             // constructor            
             propertyKeys = new String[]{"name", "age"};
-            indexName = "byNameAndAge";
+            indexName = "marriedToAndAge";
             unique = true;
-            vi = new VertexIndex(indexName, propertyKeys, composite, unique);
-            assertNotNull(vi);
-            assertEquals(indexName, vi.getName());
-            assertEquals(composite, vi.isComposite());
-            assertEquals(unique, vi.isUnique());
-            assertEquals(propertyKeys.toString(), vi.getPropertyKeys().toString()); 
+            ei = new EdgeIndex(indexName, propertyKeys, composite, unique);
+            assertNotNull(ei);
+            assertEquals(indexName, ei.getName());
+            assertEquals(composite, ei.isComposite());
+            assertEquals(unique, ei.isUnique());
+            assertEquals(propertyKeys.toString(), ei.getPropertyKeys().toString()); 
 
             // from JSON
-            propertyKeys = new String[]{"lastName"};
-            indexName = "byLastName";
-            ArrayList<String> pk = new ArrayList(){{add("lastName");}};
+            propertyKeys = new String[]{"marriedOn"};
+            indexName = "bymarriedOn";
+            ArrayList<String> pk = new ArrayList(){{add("weddingDate");}};
             JSONObject pkJSONobj = new JSONObject();
             pkJSONobj.put("name", indexName);
             pkJSONobj.put("composite", composite);
             pkJSONobj.put("unique", unique);
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
-            assertNotNull(vi);
-            assertEquals(indexName, vi.getName());
-            assertEquals(composite, vi.isComposite());
-            assertEquals(unique, vi.isUnique());
-            assertEquals((Arrays.toString((String[])pk.toArray(new String[0]))), Arrays.toString(vi.getPropertyKeys())); 
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
+            assertNotNull(ei);
+            assertEquals(indexName, ei.getName());
+            assertEquals(composite, ei.isComposite());
+            assertEquals(unique, ei.isUnique());
+            assertEquals((Arrays.toString((String[])pk.toArray(new String[0]))), Arrays.toString(ei.getPropertyKeys())); 
 
             // pass
 
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }        
     }
 
     @Test
-    public void testVertexIndexErrorHandling() throws Exception {
-        logger.info("Executing error handling tests for class com.ibm.graph.client.schema.VertexIndex");
-        VertexIndex vi = null;
+    public void testEdgeIndexErrorHandling() throws Exception {
+        logger.info("Executing error handling tests for class com.ibm.graph.client.schema.EdgeIndex");
+        EdgeIndex ei = null;
         try { 
             // name cannot be null
-            assertNull(new VertexIndex(null, null, true, true));
+            assertNull(new EdgeIndex(null, null, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -94,13 +95,13 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // name cannot be an empty string
-            assertNull(new VertexIndex("", null, true, true));
+            assertNull(new EdgeIndex("", null, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -108,12 +109,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // name cannot be an empty string
-            assertNull(new VertexIndex("     ", null, true, true));
+            assertNull(new EdgeIndex("     ", null, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -121,12 +122,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // propertyKeys cannot be null
-            assertNull(new VertexIndex("byName", null, true, true));
+            assertNull(new EdgeIndex("marriedTo", null, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -134,12 +135,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // propertyKeys cannot be an empty array
-            assertNull(new VertexIndex("byName", new String[]{}, true, true));
+            assertNull(new EdgeIndex("marriedTo", new String[]{}, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -147,12 +148,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // propertyKeys cannot contain null values
-            assertNull(new VertexIndex("byName", new String[]{"name",null}, true, true));
+            assertNull(new EdgeIndex("marriedTo", new String[]{"name",null}, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -160,12 +161,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // propertyKeys cannot contain empty strings
-            assertNull(new VertexIndex("byName", new String[]{"name",""}, true, true));
+            assertNull(new EdgeIndex("marriedTo", new String[]{"name",""}, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -173,12 +174,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // propertyKeys cannot contain empty strings
-            assertNull(new VertexIndex("byName", new String[]{"    ","name"}, true, true));
+            assertNull(new EdgeIndex("marriedTo", new String[]{"    ","name"}, true, true));
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -186,7 +187,7 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
@@ -198,7 +199,7 @@ public class VertexIndexTests {
 
         try { 
             // json cannot be null
-            vi = VertexIndex.fromJSONObject(null);
+            ei = EdgeIndex.fromJSONObject(null);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -206,12 +207,12 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
         try { 
             // json cannot be empty
-            vi = VertexIndex.fromJSONObject(new JSONObject());
+            ei = EdgeIndex.fromJSONObject(new JSONObject());
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -219,15 +220,15 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property propertyKeys is missing
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            pkJSONobj.put("name", "marriedTo");
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -235,17 +236,17 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property propertyKeys is an empty array
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -253,19 +254,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property propertyKeys contains an empty string
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pk.add("");
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -273,19 +274,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property propertyKeys contains an empty string
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pk.add("   ");
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -293,19 +294,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property propertyKeys contains a null string
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pk.add(null);
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -313,18 +314,18 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property composite is missing
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -332,19 +333,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property composite is not a boolean
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", "notBoolean");
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -352,19 +353,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property unique is missing
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", true);
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -372,19 +373,19 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
 
         try { 
             // property unique is not a boolean
             pkJSONobj = new JSONObject();
-            pkJSONobj.put("name", "byName");
+            pkJSONobj.put("name", "marriedTo");
             pk = new ArrayList();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", "notBoolean");
-            vi = VertexIndex.fromJSONObject(pkJSONobj);
+            ei = EdgeIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
         }
         catch(IllegalArgumentException iaex) {
@@ -392,7 +393,7 @@ public class VertexIndexTests {
         }
         catch(Exception ex) {
             // fail
-            logger.error("com.ibm.graph.client.schema.VertexIndex test failed.", ex);
+            logger.error("com.ibm.graph.client.schema.EdgeIndex test failed.", ex);
             assertFalse(true);
         }
     }

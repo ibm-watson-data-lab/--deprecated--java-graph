@@ -1,4 +1,4 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.response;
 
 import org.junit.Ignore;
 import org.junit.Test;
