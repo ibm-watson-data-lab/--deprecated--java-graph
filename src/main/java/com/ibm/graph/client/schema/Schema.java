@@ -187,7 +187,10 @@ public class Schema extends JSONObject {
         JSONArray jsonArray = jsonObject.getJSONArray(propertyName);
         if (jsonArray != null && jsonArray.length() > 0) {
             for (int i=0; i<jsonArray.length(); i++) {
-                list.add(jsonParser.fromJsonObject(jsonArray.getJSONObject(i)));
+                E e = jsonParser.fromJsonObject(jsonArray.getJSONObject(i));
+                if (e != null) {
+                    list.add(e);
+                }
             }
         }
         return list;

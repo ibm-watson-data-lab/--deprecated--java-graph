@@ -12,8 +12,7 @@ public class PropertyKey extends JSONObject {
         Integer("Integer"), 
         Float("Float"), 
         Boolean("Boolean"), 
-        String("String"),
-        Object("Object");
+        String("String");
 
         private String string;
 
@@ -135,11 +134,16 @@ public class PropertyKey extends JSONObject {
             throw new IllegalArgumentException("Parameter json does not define property \"dataType\" of type \"String\".");
 
         String name = json.optString("name");
+        String dataTypeStr = null;
         PropertyKeyDataType dataType = null;
         PropertyKeyCardinality cardinality = PropertyKeyCardinality.SINGLE; // default
 
         try {
-            dataType = PropertyKeyDataType.fromString(json.optString("dataType"));
+            dataTypeStr = json.optString("dataType");
+            if (dataTypeStr.equalsIgnoreCase("object")) {
+                return null;
+            }
+            dataType = PropertyKeyDataType.fromString(dataTypeStr);
             if(json.has("cardinality"))
                 cardinality = PropertyKeyCardinality.fromString(json.optString("cardinality"));
         }
