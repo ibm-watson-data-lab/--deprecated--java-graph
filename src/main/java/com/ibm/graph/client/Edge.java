@@ -33,7 +33,7 @@ public class Edge extends Entity {
      * @param properties of this edge, if defined
      * @throws Exception if the label, outV or inV parameter is missing
      */
-    public Edge(String label, Object outV, Object inV, HashMap properties) throws Exception {
+    public Edge(String label, Object outV, Object inV, HashMap<String, Object> properties) throws Exception {
         super(label, properties);
         if(label == null)
             throw new IllegalArgumentException("label parameter cannot be null.");

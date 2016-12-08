@@ -1,7 +1,7 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.schema;
 
 import com.ibm.graph.client.schema.EdgeLabel;
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.exception.GraphException;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -14,7 +14,8 @@ import java.util.HashMap;
 import static org.junit.Assert.*;
 
 /**
- * Created by markwatson on 11/28/16.
+ * Test scope:
+ * - class com.ibm.graph.client.schema.EdgeLabel
  */
 public class EdgeLabelTests {
 

@@ -1,4 +1,4 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.schema;
 
 import com.ibm.graph.client.schema.EdgeIndex;
 import com.ibm.graph.client.schema.EdgeLabel;
@@ -8,9 +8,10 @@ import com.ibm.graph.client.schema.PropertyKey;
 import com.ibm.graph.client.schema.Schema;
 import com.ibm.graph.client.schema.VertexLabel;
 import com.ibm.graph.client.schema.VertexIndex;
+import com.ibm.graph.client.TestSuite;
 import com.ibm.graph.client.Vertex;
 
-import com.ibm.graph.GraphException;
+import com.ibm.graph.client.exception.GraphException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

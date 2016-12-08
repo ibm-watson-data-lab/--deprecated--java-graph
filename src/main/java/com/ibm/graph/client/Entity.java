@@ -13,19 +13,19 @@ public class Entity extends Element {
 
     private Object id = null;
     private String label = null;
-    private HashMap properties = null;
+    private HashMap<String, Object> properties = null;
 
     public Entity(String label) throws Exception {
         this(label, null);
     }
 
-    public Entity(String label, HashMap properties) throws Exception {
+    public Entity(String label, HashMap<String, Object> properties) throws Exception {
         this.id = null;
         this.label = label;
         if(properties != null)
             this.properties = properties;
         else {
-            this.properties = new HashMap();
+            this.properties = new HashMap<String, Object>();
         }
         if(this.label != null)       
             this.put("label", this.label);

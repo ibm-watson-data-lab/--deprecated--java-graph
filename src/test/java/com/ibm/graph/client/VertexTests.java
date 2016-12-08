@@ -1,10 +1,17 @@
 package com.ibm.graph.client;
 
+import com.ibm.graph.client.response.ResultSet;
+import com.ibm.graph.client.Vertex;
+
 import org.junit.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.wink.json4j.JSONObject;
@@ -12,13 +19,40 @@ import org.apache.wink.json4j.JSONObject;
 import static org.junit.Assert.*;
 
 /**
- * Created by markwatson on 11/28/16.
+ * Test scope:
+ * - com.ibm.graph.client.Vertex
+ * - graphClient.addVertex
+ * - graphClient.updateVertex
+ * - graphClient.deleteVertex
+ * - graphClient.getVertex
  */
 public class VertexTests {
 
     private static Logger logger =  LoggerFactory.getLogger(VertexTests.class);
 
-   @Test
+    private static ArrayList<String> graphsCreated;
+
+    @BeforeClass
+    public static void setup() {
+        graphsCreated = new ArrayList<>();
+    }
+
+    @AfterClass
+    public static void teardown() {
+        if (graphsCreated.size() > 0) {
+            // try and clean up any graphs that didn't get deleted
+            for (String graphId : graphsCreated) {
+                try {
+                    TestSuite.graphClient.deleteGraph(graphId);
+                }
+                catch(Exception ex) {}
+            }
+        }
+        graphsCreated.clear();
+    }
+
+
+    @Test
     public void testVertexClass() throws Exception {
         logger.info("Executing testVertexClass test.");
         Vertex v1 = null;
@@ -65,7 +99,7 @@ public class VertexTests {
 
         try {
             // create vertex with label and properties
-            v1 = new Vertex(v1_label, new HashMap(){{put("name","John");}});
+            v1 = new Vertex(v1_label, new HashMap<String, Object>(){{put("name","John");}});
             assertNotNull(v1);
             assertNull(v1.getId());         // not set
             assertEquals(v1_label, v1.getLabel());      
@@ -97,7 +131,7 @@ public class VertexTests {
 
             j1 = new JSONObject();
             j1.put("label", "person");
-            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            j1.put("properties", new HashMap<String, Object>(){{put("name", "Jane");put("age", 27);}});
             v1 = Vertex.fromJSONObject(j1);
             assertNotNull(v1);
             assertNull(v1.toString(), v1.getId());         // not set
@@ -111,7 +145,7 @@ public class VertexTests {
 
             j1 = new JSONObject();
             j1.put("label", "person");
-            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            j1.put("properties", new HashMap<String, Object>(){{put("name", "Jane");put("age", 27);}});
             j1.put("id", "1");
             v1 = Vertex.fromJSONObject(j1);
             assertNotNull(v1);
@@ -147,8 +181,20 @@ public class VertexTests {
    @Test
     public void addVertex() throws Exception {
         logger.info("Executing graphClient.addVertex(...) test.");
+
         Vertex v1 = null, v2 = null, v3 = null;
+        String graphId = null;
+        String currentGraphId = null;
         try {
+
+            // graph setup
+            currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph();
+            assertNotNull(graphId);
+            graphsCreated.add(graphId);
+
             v1 = new Vertex();
             assertNotNull(v1);
             v1 = TestSuite.graphClient.addVertex(v1);
@@ -182,12 +228,22 @@ public class VertexTests {
             // fail
             logger.error(ExceptionUtils.getStackTrace(ex));
             assertFalse("graphClient.addVertex(...) - unexpected exception: " + ex.getMessage(), true);
-        }         
-
-        // cleanup
-        assertTrue(TestSuite.graphClient.deleteVertex(v1.getId()));
-        assertTrue(TestSuite.graphClient.deleteVertex(v2.getId()));
-        assertTrue(TestSuite.graphClient.deleteVertex(v3.getId()));
+        } 
+        finally {
+            // cleanup ...
+            if(currentGraphId != null) {             
+                try {
+                    TestSuite.graphClient.setGraph(currentGraphId); 
+                    if(graphId != null)  {
+                        TestSuite.graphClient.deleteGraph(graphId);
+                        graphsCreated.remove(graphId);   
+                    } 
+                }
+                catch(Exception ex) {
+                    // ignore
+                }
+            }
+        }
     }
 
     @Test
@@ -212,7 +268,17 @@ public class VertexTests {
     public void updateVertex() throws Exception {
         logger.info("Executing graphClient.updateVertex(...) test.");
         Vertex v = null;
+        String graphId = null;
+        String currentGraphId = null;
         try {
+            // graph setup
+            currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph();
+            assertNotNull(graphId);
+            graphsCreated.add(graphId);
+
             v = new Vertex("person");
             assertNotNull(v);
             v = TestSuite.graphClient.addVertex(v);
@@ -245,6 +311,21 @@ public class VertexTests {
             // fail
             ex.printStackTrace();
             assertFalse("TestSuite.graphClient.updateVertex(...): unexpected exception: " + ex.getMessage(), true);   
+        }
+        finally {
+            // cleanup ...
+            if(currentGraphId != null) {             
+                try {
+                    TestSuite.graphClient.setGraph(currentGraphId); 
+                    if(graphId != null)  {
+                        TestSuite.graphClient.deleteGraph(graphId);
+                        graphsCreated.remove(graphId);   
+                    } 
+                }
+                catch(Exception ex) {
+                    // ignore
+                }
+            }
         }
     }
 
@@ -279,9 +360,19 @@ public class VertexTests {
     @Test
     public void deleteVertex() throws Exception {
         logger.info("Executing graphClient.deleteVertex(...) test.");
-        Vertex v = null;
+
+        String graphId = null;
+        String currentGraphId = null;
         try {
-            v = new Vertex("person");
+            // graph setup
+            currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph();
+            assertNotNull(graphId);
+            graphsCreated.add(graphId);
+
+            Vertex v = new Vertex("person");
             assertNotNull(v);
             v = TestSuite.graphClient.addVertex(v);
             assertNotNull(v);
@@ -289,14 +380,32 @@ public class VertexTests {
             assertEquals(v.toString(), "person", v.getLabel());
             assertNull(v.toString(), v.getProperties());
 
-            // cleanup
+            //vertex exists - delete should return true    
             assertTrue(TestSuite.graphClient.deleteVertex(v.getId()));
+            //vertex doesn't exist anymore - delete should return false
+            assertFalse(TestSuite.graphClient.deleteVertex(v.getId()));
         }
         catch(Exception ex) {
             // fail
             ex.printStackTrace();
             assertFalse("TestSuite.graphClient.deleteVertex(...): unexpected exception: " + ex.getMessage(), true);   
         }
+        finally {
+            // cleanup ...
+            if(currentGraphId != null) {             
+                try {
+                    TestSuite.graphClient.setGraph(currentGraphId); 
+                    if(graphId != null)  {
+                        TestSuite.graphClient.deleteGraph(graphId);
+                        graphsCreated.remove(graphId);   
+                    } 
+                }
+                catch(Exception ex) {
+                    // ignore
+                }
+            }
+        }        
+
     }
 
     @Test
@@ -315,12 +424,9 @@ public class VertexTests {
             assertFalse("TestSuite.graphClient.deleteVertex(null) unexpected exception: " + ex.getMessage(), true);   
         }        
 
-        // delete a non-existing edge
+        // delete a non-existing vertex
         try {
             assertFalse("TestSuite.graphClient.deleteVertex(123456789)", TestSuite.graphClient.deleteVertex(123456789));
-        }
-        catch(IllegalArgumentException iaex) {
-            // pass
         }
         catch(Exception ex) {
             // fail
@@ -331,7 +437,17 @@ public class VertexTests {
     @Test
     public void getVertex() throws Exception {
         logger.info("Executing graphClient.getVertex(...) test.");
+        String graphId = null;
+        String currentGraphId = null;
         try {
+            // graph setup
+            currentGraphId = TestSuite.graphClient.getGraphId();
+            assertNotNull(currentGraphId);
+            // create graph with random name
+            graphId = TestSuite.graphClient.createGraph();
+            assertNotNull(graphId);
+            graphsCreated.add(graphId);
+
             // create an edge between two vertices
             Vertex v1 = new Vertex();
             v1.setPropertyValue("married",false);
@@ -366,7 +482,22 @@ public class VertexTests {
         catch(Exception ex) {
             // fail
             assertFalse("TestSuite.graphClient.getVertex(...) unexpected exception: " + ex.getMessage(), true);   
-        }        
+        } 
+        finally {
+            // cleanup ...
+            if(currentGraphId != null) {             
+                try {
+                    TestSuite.graphClient.setGraph(currentGraphId); 
+                    if(graphId != null)  {
+                        TestSuite.graphClient.deleteGraph(graphId);
+                        graphsCreated.remove(graphId);   
+                    } 
+                }
+                catch(Exception ex) {
+                    // ignore
+                }
+            }
+        }               
     }
 
     @Test
@@ -400,47 +531,4 @@ public class VertexTests {
         }
     }
 
-    @Test
-    public void createUpdateJohnDoeVertex() throws Exception {
-        logger.info("Executing createUpdateJohnDoeVertex test.");
-        // create vertex
-        Vertex originalVertex = new Vertex("person", new HashMap(){{
-            put("name","John Doe");
-            put("country","United States");
-        }});
-        Vertex addedVertex = TestSuite.graphClient.addVertex(originalVertex);
-        assertNotNull(addedVertex);
-        assertEquals(addedVertex.getPropertyValue("name"), originalVertex.getPropertyValue("name"));
-        assertEquals(addedVertex.getPropertyValue("country"), originalVertex.getPropertyValue("country"));
-        // get vertex
-        Vertex vertex = TestSuite.graphClient.getVertex(addedVertex.getId());
-        assertNotNull(vertex);
-        assertEquals(vertex.getId(),addedVertex.getId());
-        assertEquals(vertex.getPropertyValue("name"), addedVertex.getPropertyValue("name"));
-        assertEquals(vertex.getPropertyValue("country"), addedVertex.getPropertyValue("country"));
-        // update vertex
-        vertex.setPropertyValue("country", "Canada");
-        Vertex updatedVertex = TestSuite.graphClient.updateVertex(vertex);
-        assertNotNull(updatedVertex);
-        assertEquals(updatedVertex.getPropertyValue("name"), vertex.getPropertyValue("name"));
-        // query vertex again to verify
-        vertex = TestSuite.graphClient.getVertex(updatedVertex.getId());
-        assertNotNull(vertex);
-        assertEquals(vertex.getPropertyValue("name"), updatedVertex.getPropertyValue("name"));
-        assertEquals(vertex.getPropertyValue("country"), updatedVertex.getPropertyValue("country"));
-    }
-
-    @Test
-    public void createJaneDoeVertex() throws Exception {
-        logger.info("Executing createJaneDoeVertex test.");
-        // create vertex
-        Vertex originalVertex = new Vertex("person", new HashMap() {{
-            put("name", "Jane Doe");
-            put("country", "United States");
-        }});
-        Vertex addedVertex = TestSuite.graphClient.addVertex(originalVertex);
-        assertNotNull(addedVertex);
-        assertEquals(addedVertex.getPropertyValue("name"), originalVertex.getPropertyValue("name"));
-        assertEquals(addedVertex.getPropertyValue("country"), originalVertex.getPropertyValue("country"));
-    }
 }

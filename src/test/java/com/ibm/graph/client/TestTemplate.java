@@ -1,6 +1,6 @@
 package com.ibm.graph.client;
 
-import com.ibm.graph.ResultSet;
+import com.ibm.graph.client.response.ResultSet;
 import com.ibm.graph.client.schema.*;
 
 import org.junit.AfterClass;

@@ -1,8 +1,8 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.exception;
 
 
 /**
- * Created by markwatson on 11/28/16.
+ * Thrown if the Graph Java library encountered a fatal error.
  */
 public class GraphClientException extends Exception {
 

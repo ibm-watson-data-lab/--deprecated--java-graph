@@ -1,22 +1,24 @@
-package com.ibm.graph.client;
+package com.ibm.graph.client.schema;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class EntityLabelTests {
+/**
+ * Test scope:
+ * - class com.ibm.graph.client.schema.EntityIndex
+ */
+public class EntityIndexTests {
 
 	@Ignore("tests are included in subclass tests")
 	@Test
-	public void testEntityLabel() throws Exception {
+	public void testEntityIndex() throws Exception {
 	    // tests are included in subclass tests
 	}
-
 
 	@Ignore("tests are included in subclass tests")
 	@Test
-	public void testEntityLabelErrorHandling() throws Exception {
+	public void testEntityIndexErrorHandling() throws Exception {
 	    // tests are included in subclass tests
 	}
-
 }
 

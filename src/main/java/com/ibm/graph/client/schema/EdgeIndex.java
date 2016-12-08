@@ -62,5 +62,9 @@ public class EdgeIndex extends EntityIndex {
         catch(JSONException jsonex) {
             throw new IllegalArgumentException("Parameter json does not define property \"" + pn + "\" of type " + t + ".");
         }
+        catch(Exception ex) {
+            throw new IllegalArgumentException("Parameter json " + json.toString() + " does not define the required edge index properties: " + ex.getMessage());
+        }        
+
     }
 }

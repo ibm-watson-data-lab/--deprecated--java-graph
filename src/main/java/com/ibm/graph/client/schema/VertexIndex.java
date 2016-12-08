@@ -45,7 +45,7 @@ public class VertexIndex extends EntityIndex {
         try {
             // verify that the propertyKeys property is of type String[]
             pn = "propertyKeys";
-            JSONArray propertyKeys = json.getJSONArray(pn);
+            JSONArray propertyKeys = json.getJSONArray(pn);         
             t = "String[]";
             // verify that the composite property is of type boolean
             pn = "composite";
@@ -62,5 +62,8 @@ public class VertexIndex extends EntityIndex {
         catch(JSONException jsonex) {
             throw new IllegalArgumentException("Parameter json does not define property \"" + pn + "\" of type " + t + ".");
         }
+        catch(Exception ex) {
+            throw new IllegalArgumentException("Parameter json " + json.toString() + " does not define the required edge index properties: " + ex.getMessage());
+        }        
     }
 }

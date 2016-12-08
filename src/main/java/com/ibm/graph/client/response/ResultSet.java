@@ -1,6 +1,6 @@
-package com.ibm.graph;
+package com.ibm.graph.client.response;
 
-import com.ibm.graph.client.GraphClientException;
+import com.ibm.graph.client.exception.GraphClientException;
 import com.ibm.graph.client.Edge;
 import com.ibm.graph.client.Vertex;
 
@@ -14,57 +14,55 @@ import org.apache.wink.json4j.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Provides access to IBM Graph results.
+ *
+ */
 public class ResultSet {
 
 	private static Logger logger =  LoggerFactory.getLogger(ResultSet.class);		
 
-	private String requestId = null; // e.g. "7e2914a1-cf17-4571-9791-4411c15d5c96" (optional)
-	private String statusMessage = null;
-	private String statusCode = null;
-	private JSONArray data = null;
+	// the IBM Graph response on which this result set is based
 	private JSONObject response = null;
 
+	// optional; identifies the request that triggered the response
+	private String requestId = null; 
+
+	// the extracted result set data
+	private JSONArray data = null;
+
 	/**
-	 * Constructor
+	 * Constructor. Extracts result set information from IBM Graph response.
 	 * @param response a JSONObject containing the IBM Graph response
 	 * @throws GraphClientException if the IBM Graph response could not be processed
 	 * @throws IllegalArgumentException if response is null
 	 */
-	public ResultSet(JSONObject response) throws GraphClientException, IllegalArgumentException {
+	protected ResultSet(JSONObject response) throws GraphClientException, IllegalArgumentException {
     	if(response == null)
-    		throw new IllegalArgumentException("response parameter is missing.");
+    		throw new IllegalArgumentException("Parameter response is null.");
 
     	this.response = response;
 
-    	logger.debug("Creating ResultSet for response: " + response.toString());
+    	logger.debug("Creating ResultSet from response: " + response.toString());
 
 		try {
 			if(response.has("requestId")) {
 				this.requestId = response.getString("requestId");
 			}
-			// extract status information
-			if(response.has("status")) {
-				if(response.getJSONObject("status").has("message"))
-					this.statusMessage = response.getJSONObject("status").getString("message");
-				if(response.getJSONObject("status").has("code"))
-					this.statusCode = response.getJSONObject("status").getString("code");
-			}
-			else {
-				// fallback: status information can also be returned as follows:
-				// sample IBM Graph responses: 
-				//	{"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
-				// 	{"code":"NotFoundError","message":"graph not found"}
-				if(response.has("message"))
-					this.statusMessage = response.getString("message");
-				if(response.has("code"))
-					this.statusCode = response.getString("code");					
-			}
+
 			if(response.has("result")) {
-				this.data = response.getJSONObject("result").getJSONArray("data");
+				if(response.getJSONObject("result").has("data"))
+					this.data = response.getJSONObject("result").getJSONArray("data");
 			}
 			else {
+				// some responses don't follow the result > data structure: {"graphs":["1...3","1","g","zzz"]}
+				// wrap those responses in an array; this way a response is accessible as the first ResultSet element
+				// [{"graphs":["1...3","1","g","zzz"]}]
 				this.data = new JSONArray();
+				if(response.length() > 0)
+					this.data.add(response);
 			}
+
 			logger.debug("Created ResultSet for response: " + this.toString());
 		}
 		catch(Exception ex) {
@@ -74,30 +72,10 @@ public class ResultSet {
 
 	/**
 	 * Returns the request id that produced this ResultSet
-	 * @return String request id
+	 * @return String request id, if set
 	 */
 	public String getRequestId() {
 		return this.requestId;
-	}
-
-	public boolean hasMetadata() {
-		return ((this.statusCode != null) || (this.statusMessage != null));
-	}
-
-	/**
-	 * Returns the response's status code
-	 * @return String the response's HTTP status code (200 = ok)
-	 */
-	public String getStatusCode() {
-		return this.statusCode;
-	}
-
-	/**
-	 * Returns the response's message text
-	 * @return String message text
-	 */
-	public String getStatusMessage() {
-		return this.statusMessage;
 	}
 
 	/**
@@ -109,10 +87,10 @@ public class ResultSet {
 	}
 
 	/**
-	 * Returns the number of results or 0 if no result is available
-	 * @return long the number of results in the result set
+	 * Returns the number of results in this result set or 0 if no result is available
+	 * @return int the number of results in the result set
 	 */
-	public long getResultCount() {
+	public int getResultCount() {
 		return this.data.length();
 	}
 
@@ -125,14 +103,19 @@ public class ResultSet {
 	public JSONObject getResultAsJSONObject(int index) throws IndexOutOfBoundsException {
 		if((index >= 0) && (index <= this.data.length() - 1)) {
 			try {
-				return this.data.getJSONObject(index);
+				if(! this.data.isNull(index))
+					return this.data.getJSONObject(index);
+				return null;
 			}
-			catch(JSONException jsonex) {
+			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to JSONObject.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
 				return null;
 			}
 		}
 		else {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");
 		}
 	};
 
@@ -140,8 +123,9 @@ public class ResultSet {
 	 * Returns a result iterator 
 	 * @return Iterator JSONObject iterator for the results
 	 */
+	@SuppressWarnings("unchecked") 
 	public Iterator<JSONObject> getJSONObjectResultIterator() {
-		return this.data.iterator();
+		return (Iterator<JSONObject>)this.data.iterator();
 	};
 
 	/**
@@ -153,29 +137,38 @@ public class ResultSet {
 	public Vertex getResultAsVertex(int index) throws IndexOutOfBoundsException {
 		if((this.data != null) && (index >= 0) && (index <= this.data.length() - 1)) {
 			try {
-				return Vertex.fromJSONObject(this.data.getJSONObject(index));
+				if(! this.data.isNull(index))
+					return Vertex.fromJSONObject(this.data.getJSONObject(index));
+				return null;
 			}
 			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to Vertex.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
 				return null;
 			}
 		}
 		else {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");			
 		}
 	};
 
 	/**
 	 * Attempts to interpret each result as an com.ibm.graph.client.Vertex and returns an iterator.
-	 * @return Iterator Vertex iterator
+	 * @return Iterator Vertex iterator or null if the results cannot be converted to Vertex objects
 	 */
 	public Iterator<Vertex> getVertexResultIterator() {
 		ArrayList<Vertex> vertices = new ArrayList<Vertex>();
 		for(int i = 0; i < this.data.length(); i++) {
 			try {
-				vertices.add(Vertex.fromJSONObject(this.data.getJSONObject(i)));
+				if(! this.data.isNull(i))
+					vertices.add(Vertex.fromJSONObject(this.data.getJSONObject(i)));
 			}
 			catch(Exception ex) {
-				vertices.add(null);
+				// suppress error
+				logger.debug("Result set could not be interpreted as a Vertex array.", ex);
+				logger.debug("Result set: " + this.data.toString());
+				return null;								
 			}			
 		}
 		return vertices.iterator();
@@ -184,36 +177,45 @@ public class ResultSet {
 	/**
 	 * Returns the index-th result from the result set as a com.ibm.graph.client.Edge or null if the result cannot be converted
 	 * @param index a number between 0 (first result) and (getResultCount() - 1)
-	 * @return Edge the index-th result from the result set
+	 * @return Edge the index-th result from the result set, or null
 	 * @throws IndexOutOfBoundsException if index is not valid for this result set
 	 */
 	public Edge getResultAsEdge(int index) throws IndexOutOfBoundsException {
 		if((index >= 0) && (index <= this.data.length() - 1)) {
 			try {
-				return Edge.fromJSONObject(this.data.getJSONObject(index));
+				if(! this.data.isNull(index))
+					return Edge.fromJSONObject(this.data.getJSONObject(index));
+				return null;				
 			}
 			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to Edge.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
 				return null;
 			}
 		}
 		else {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");
 		}
 	};
 
 	/**
 	 * Attempts to interpret each result as an com.ibm.graph.client.Edge and returns an iterator.
-	 * @return Iterator Edge iterator
+	 * @return Iterator Edge iterator or null if the result set does not represent an array of edges
 	 */
 	public Iterator<Edge> getEdgeResultIterator() {
 		ArrayList<Edge> edges = new ArrayList<Edge>();
 		for(int i = 0; i < this.data.length(); i++) {
 			try {
-				edges.add(Edge.fromJSONObject(this.data.getJSONObject(i)));
+				if(! this.data.isNull(i))				
+					edges.add(Edge.fromJSONObject(this.data.getJSONObject(i)));
 			}
 			catch(Exception ex) {
-				edges.add(null);
-			}			
+				// suppress error
+				logger.debug("Result set could not be interpreted as an Edge array.", ex);
+				logger.debug("Result set: " + this.data.toString());
+				return null;								
+			}		
 		}
 		return edges.iterator();
 	};
@@ -227,14 +229,19 @@ public class ResultSet {
 	public String getResultAsString(int index) throws IndexOutOfBoundsException {
 		if((index >= 0) && (index <= this.data.length() - 1)) {
 			try {
-				return this.data.getString(index);
+				if(! this.data.isNull(index))
+					return this.data.getString(index);
+				return null;
 			}
-			catch(JSONException jsonex) {
+			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to String.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
 				return null;
 			}
 		}
 		else {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");
 		}
 	};
 
@@ -247,20 +254,34 @@ public class ResultSet {
 	public Boolean getResultAsBoolean(int index) throws IndexOutOfBoundsException {
 		if((index >= 0) && (index <= this.data.length() - 1)) {
 			try {
-				return new Boolean(this.data.getBoolean(index));
+				if(! this.data.isNull(index)) {
+
+					if(("false").equalsIgnoreCase(this.data.getString(index)) ||
+					   ("true").equalsIgnoreCase(this.data.getString(index)))
+						return new Boolean(this.data.getString(index));
+					return null;
+					
+					// this doesn't seem to work as expected
+					// return new Boolean(this.data.getString(index));
+
+				}
+				return null;
 			}
-			catch(JSONException jsonex) {
+			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to Boolean.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
 				return null;
 			}
 		}
 		else {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");
 		}
 	};
 
 	/**
 	 * Attempts to interpret each result as an String and returns an iterator.
-	 * @return Iterator String iterator
+	 * @return Iterator String iterator or null if the result set does not represent an array of String
 	 */
 	public Iterator<String> getStringResultIterator() {
 		ArrayList<String> strings = new ArrayList<String>();
@@ -269,7 +290,10 @@ public class ResultSet {
 				strings.add(this.data.getString(i));
 			}
 			catch(Exception ex) {
-				strings.add(null);
+				// suppress error
+				logger.debug("Result set could not be interpreted as a String array.", ex);
+				logger.debug("Result set: " + this.data.toString());
+				return null;	
 			}			
 		}
 		return strings.iterator();
@@ -283,13 +307,12 @@ public class ResultSet {
 		return this.response;
 	}
 
-	/**
-	 * Returns a string representation of this result set.
-	 * @return String the result set encoded as a string
-	 */
 	public String toString() {
-		return "requestId: " + this.requestId + " status code: " + this.statusCode + " status message: " + 
-		       this.getStatusMessage() + " result set size: " + this.data.length();
+		StringBuffer buff = new StringBuffer("Request id: " + this.requestId + " ");
+		if(response != null)
+			buff.append("Response: " + this.response.toString() + " ");
+		if(data != null)
+			buff.append("Data: " + this.data.toString());
+		return buff.toString();
 	}
-
 }
