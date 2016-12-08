@@ -12,14 +12,18 @@ public class EntityLabelTests {
 	@Ignore("tests are included in subclass tests")
 	@Test
 	public void testEntityLabel() throws Exception {
-	    // tests are included in subclass tests
+	    // tests are included in subclass tests:
+	    //  com.ibm.graph.client.schema.VertexLabel
+	    //  com.ibm.graph.client.schema.EdgeLabel
 	}
 
 
 	@Ignore("tests are included in subclass tests")
 	@Test
 	public void testEntityLabelErrorHandling() throws Exception {
-	    // tests are included in subclass tests
+	    // tests are included in subclass tests:
+	    //  com.ibm.graph.client.schema.VertexLabel
+	    //  com.ibm.graph.client.schema.EdgeLabel
 	}
 
 }

@@ -15,6 +15,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests for class com.ibm.graph.response.HTTPStatusInfo
+ * No IBM Graph connection is required.
  */
 public class HTTPStatusInfoTests {
 
