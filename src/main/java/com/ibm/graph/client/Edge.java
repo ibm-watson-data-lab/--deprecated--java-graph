@@ -5,7 +5,7 @@ import org.apache.wink.json4j.JSONObject;
 import java.util.HashMap;
 
 /**
- * Created by markwatson on 11/8/16.
+ * Describes the connection between two vertices.
  */
 public class Edge extends Entity {
 

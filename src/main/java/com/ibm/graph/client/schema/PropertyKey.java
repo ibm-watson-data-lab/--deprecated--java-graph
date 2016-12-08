@@ -4,7 +4,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * Created by markwatson on 11/15/16.
+ * Defines a Vertex and/or Edge property.
  */
 public class PropertyKey extends JSONObject {
 
@@ -12,7 +12,8 @@ public class PropertyKey extends JSONObject {
         Integer("Integer"), 
         Float("Float"), 
         Boolean("Boolean"), 
-        String("String");
+        String("String"),
+        Object("Object");
 
         private String string;
 

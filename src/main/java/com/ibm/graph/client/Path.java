@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by markwatson on 11/8/16.
+ * Describes a path in a graph, including the vertices and edges that make up the path.
  */
 public class Path extends Element {
 

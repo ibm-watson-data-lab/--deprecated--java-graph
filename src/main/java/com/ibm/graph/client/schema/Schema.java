@@ -1,7 +1,5 @@
 package com.ibm.graph.client.schema;
 
-import com.ibm.graph.client.Entity;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by markwatson on 11/15/16.
+ * Defines the properties of a Graph, including it's edge labels, vertex labels, property keys, and indexes.
  */
 public class Schema extends JSONObject {
 

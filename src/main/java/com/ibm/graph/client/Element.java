@@ -1,10 +1,9 @@
 package com.ibm.graph.client;
 
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * Created by markwatson on 11/8/16.
+ * Base class for elements stored or retrieved from a Graph.
  */
 public class Element extends JSONObject {
 

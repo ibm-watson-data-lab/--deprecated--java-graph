@@ -4,7 +4,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * Created by markwatson on 11/15/16.
+ * Base class for labels associated with the Graph schema.
  */
 public abstract class EntityLabel extends JSONObject {
 

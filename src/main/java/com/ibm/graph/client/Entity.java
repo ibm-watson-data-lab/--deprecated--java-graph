@@ -1,13 +1,12 @@
 package com.ibm.graph.client;
 
-import org.apache.wink.json4j.JSON;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.HashMap;
 
 /**
- * Created by markwatson on 11/8/16.
+ * Base class for elements stored in a Graph.
  */
 public class Entity extends Element {
 
