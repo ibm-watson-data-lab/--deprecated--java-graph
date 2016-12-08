@@ -879,7 +879,7 @@ public class IBMGraphClient {
                 }
             }
             else {
-                throw new GraphException("Error loading graphson.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+                throw new GraphException("Error loading graphson from file.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
             }
         }  
         catch(GraphClientException gcex) {
@@ -889,7 +889,7 @@ public class IBMGraphClient {
             throw gex;
         }        
         catch(Exception ex) {
-            throw new GraphClientException("Error loading graphson.", ex);            
+            throw new GraphClientException("Error loading graphson from file.", ex);            
         } 
     } 
 

@@ -36,7 +36,8 @@ import java.util.Map;
         SchemaTests.class,              // tests schema specific methods in com.ibm.graph.client.IBMGraphClient
         VertexTests.class,              // tests vertex specific methods in com.ibm.graph.client.IBMGraphClient
         EdgeTests.class,                // tests edge specific methods in com.ibm.graph.client.IBMGraphClient
-        GremlinTests.class              // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient
+        GremlinTests.class,             // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient
+        GraphSONTests.class             // tests graphSON load methods in com.ibm.graph.client.IBMGraphClient
 })
 public class TestSuite {
 
