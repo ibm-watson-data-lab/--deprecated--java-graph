@@ -1,5 +1,9 @@
 package com.ibm.graph.client;
 
+import com.ibm.graph.client.exception.*;
+import com.ibm.graph.client.response.*;
+import com.ibm.graph.client.schema.*;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -15,23 +19,24 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        com.ibm.graph.client.exception.GraphExceptionTests.class,
-        com.ibm.graph.client.response.GraphStatusInfoTests.class,
-        com.ibm.graph.client.response.GraphResponseTests.class,
-        com.ibm.graph.client.response.ResultSetTests.class,        
-        com.ibm.graph.client.schema.PropertyKeyTests.class,
-        com.ibm.graph.client.schema.EntityLabelTests.class,
-        com.ibm.graph.client.schema.EdgeLabelTests.class,
-        com.ibm.graph.client.schema.VertexLabelTests.class,
-        com.ibm.graph.client.schema.EntityIndexTests.class,
-        com.ibm.graph.client.schema.VertexIndexTests.class,
-        com.ibm.graph.client.schema.EdgeIndexTests.class,
-        GraphTests.class,
-        com.ibm.graph.client.schema.SchemaTests.class,
-        VertexTests.class
-        ,
-        EdgeTests.class,
-        GremlinTests.class
+        GraphExceptionTests.class,      // tests class com.ibm.graph.client.exception.GraphException     
+        HTTPStatusInfoTests.class,      // tests class com.ibm.graph.client.response.HTTPStatusInfo
+        GraphStatusInfoTests.class,     // tests class com.ibm.graph.client.response.GraphStatusInfo
+        GraphResponseTests.class,       // tests class com.ibm.graph.client.response.GraphResponse
+        ResultSetTests.class,           // tests class com.ibm.graph.client.response.ResultSet
+        PropertyKeyTests.class,         // tests class com.ibm.graph.client.schema.PropertyKey
+        EntityLabelTests.class,         // tests class com.ibm.graph.client.schema.EntityLabel
+        VertexLabelTests.class,         // tests class com.ibm.graph.client.schema.VertexLabel        
+        EdgeLabelTests.class,           // tests class com.ibm.graph.client.schema.EdgeLabel
+        EntityIndexTests.class,         // tests class com.ibm.graph.client.schema.EntityIndex
+        VertexIndexTests.class,         // tests class com.ibm.graph.client.schema.VertexIndex
+        EdgeIndexTests.class,           // tests class com.ibm.graph.client.schema.EdgeIndex
+        SchemaClassTests.class,         // tests class com.ibm.graph.client.schema.Schema
+        GraphTests.class,               // tests graph specific methods in com.ibm.graph.client.IBMGraphClient
+        SchemaTests.class,              // tests schema specific methods in com.ibm.graph.client.IBMGraphClient
+        VertexTests.class,              // tests vertex specific methods in com.ibm.graph.client.IBMGraphClient
+        EdgeTests.class,                // tests edge specific methods in com.ibm.graph.client.IBMGraphClient
+        GremlinTests.class              // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient
 })
 public class TestSuite {
 

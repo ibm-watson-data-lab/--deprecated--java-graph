@@ -1,4 +1,4 @@
-package com.ibm.graph.client.schema;
+package com.ibm.graph.client;
 
 import com.ibm.graph.client.schema.EdgeIndex;
 import com.ibm.graph.client.schema.EdgeLabel;
@@ -31,6 +31,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
+/**
+ *
+ * Tests schema specific methods in com.ibm.graph.client.IBMGraphClient.
+ * An IBM Graph connection is required.
+ *
+ */
 public class SchemaTests {
 
     private static ArrayList<String> graphsCreated;
@@ -53,90 +59,6 @@ public class SchemaTests {
             }
         }
         graphsCreated.clear();
-    }
-
-    @Test
-    public void testSchemaClass() throws Exception {
-        logger.info("Executing tests for com.ibm.graph.client.schema.Schema");
-        try {
-            Schema s = new Schema();
-            assertNotNull(s);
-            assertFalse(s.definesPropertyKeys());
-            assertTrue(s.getPropertyKeys().length == 0);
-            assertFalse(s.definesVertexLabels());
-            assertTrue(s.getVertexLabels().length == 0);
-            assertFalse(s.definesEdgeLabels());
-            assertTrue(s.getEdgeLabels().length == 0);
-            assertFalse(s.definesVertexIndexes());
-            assertTrue(s.getVertexIndexes().length == 0);
-            assertFalse(s.definesEdgeIndexes());
-            assertTrue(s.getEdgeIndexes().length == 0);
-
-            s = new Schema(new PropertyKey[]{
-                                    new PropertyKey("name", PropertyKey.PropertyKeyDataType.String, PropertyKey.PropertyKeyCardinality.SINGLE)
-                                },
-                                new VertexLabel[]{
-                                    new VertexLabel("person")
-                                },
-                                new EdgeLabel[]{
-                                    new EdgeLabel("friend")
-                                },
-                                new VertexIndex[]{
-                                    new VertexIndex("vertexByName", new String[]{"name"}, true, true)
-                                },
-                                new EdgeIndex[]{});
-            assertNotNull(s);
-            assertTrue(s.definesPropertyKeys());
-            assertTrue(s.getPropertyKeys().length == 1);
-            assertTrue(s.definesVertexLabels());
-            assertTrue(s.getVertexLabels().length == 1);
-            assertTrue(s.definesEdgeLabels());
-            assertTrue(s.getEdgeLabels().length == 1);
-            assertTrue(s.definesVertexIndexes());
-            assertTrue(s.getVertexIndexes().length == 1);
-            assertFalse(s.definesEdgeIndexes());
-            assertTrue(s.getEdgeIndexes().length == 0);
-
-            s = null;
-            // test method fromJSONObject
-            s = Schema.fromJSONObject(new JSONObject());
-            assertNotNull(s);
-            assertFalse(s.definesPropertyKeys());
-            assertTrue(s.getPropertyKeys().length == 0);
-            assertFalse(s.definesVertexLabels());
-            assertTrue(s.getVertexLabels().length == 0);
-            assertFalse(s.definesEdgeLabels());
-            assertTrue(s.getEdgeLabels().length == 0);
-            assertFalse(s.definesVertexIndexes());
-            assertTrue(s.getVertexIndexes().length == 0);
-            assertFalse(s.definesEdgeIndexes());
-            assertTrue(s.getEdgeIndexes().length == 0);            
-
-        }
-        catch(Exception ex) {
-            // fail
-            logger.error("com.ibm.graph.client.schema.Schema test: unexpected exception.", ex);
-            assertFalse("com.ibm.graph.client.schema.Schema test: unexpected exception: " + ex.getMessage(), true);   
-        }
-    }
-
-   @Test
-    public void testSchemaClassErrorHandling() throws Exception {
-        logger.info("Executing error handling tests for com.ibm.graph.client.schema.Schema");
-        
-        try {
-            // null parameter
-            Schema.fromJSONObject(null);
-            assertFalse(true);
-        }
-        catch(IllegalArgumentException iaex) {
-            // pass
-        }
-        catch(Exception ex) {
-            // fail
-            logger.error("com.ibm.graph.client.schema.Schema error handling test: unexpected exception.", ex);
-            assertFalse("com.ibm.graph.client.schema.Schema error handling test: unexpected exception: " + ex.getMessage(), true);   
-        }
     }
 
     @Test
@@ -257,46 +179,6 @@ public class SchemaTests {
             assertFalse(s1.toString(), s1.definesEdgeIndexes());
 
             s1 = null;
-
-/*            s1 = new Schema(new PropertyKey[]{
-                                new PropertyKey("name", "String", "SINGLE"),
-                                new PropertyKey("age", "Integer", "SINGLE"),
-                                new PropertyKey("type", "String", "SINGLE")
-                            },
-                            new VertexLabel[]{
-                                new VertexLabel("person"),
-                                new VertexLabel("pet")
-                            },
-                            new EdgeLabel[]{
-                                new EdgeLabel("friend"),
-                                new EdgeLabel("owns")
-                            },
-                            new VertexIndex[]{
-                                new VertexIndex("vertexByName", new String[]{"name"}, true, true),
-                                new VertexIndex("vertexByAge", new String[]{"age"}, true, true)
-                            },
-                            new EdgeIndex[]{});
-
-            // update schema again
-            s1 = TestSuite.graphClient.saveSchema(s1);
-            // verify results
-            assertNotNull(s1);
-            assertTrue(s1.toString(), s1.definesPropertyKeys());
-            assertThat(Arrays.asList(s1.getPropertyKeys()), hasItem(new PropertyKey("name", "String", "SINGLE")));
-            assertThat(Arrays.asList(s1.getPropertyKeys()), hasItem(new PropertyKey("age", "Integer", "SINGLE")));
-            assertThat(Arrays.asList(s1.getPropertyKeys()), hasItem(new PropertyKey("type", "String", "SINGLE")));
-            assertTrue(s1.toString(), s1.definesVertexLabels());
-            assertThat(Arrays.asList(s1.getVertexLabels()), hasItem(new VertexLabel("person")));
-            assertThat(Arrays.asList(s1.getVertexLabels()), hasItem(new VertexLabel("pet")));
-            assertTrue(s1.toString(), s1.definesEdgeLabels());
-            assertThat(Arrays.asList(s1.getEdgeLabels()), hasItem(new EdgeLabel("friend")));
-            assertThat(Arrays.asList(s1.getEdgeLabels()), hasItem(new EdgeLabel("owns")));
-            assertTrue(s1.toString(), s1.definesVertexIndexes());
-            assertThat(Arrays.asList(s1.getVertexIndexes()), hasItem(new VertexIndex("vertexByName", new String[]{"name"}, true, true)));
-            assertThat(Arrays.asList(s1.getVertexIndexes()), hasItem(new VertexIndex("vertexByName", new String[]{"age"}, true, true)));
-            assertFalse(s1.toString(), s1.definesEdgeIndexes());
-*/
-
 
         }
         catch(Exception ex) {
@@ -430,5 +312,7 @@ public class SchemaTests {
             }
         }                
     }
+
+
 
 }

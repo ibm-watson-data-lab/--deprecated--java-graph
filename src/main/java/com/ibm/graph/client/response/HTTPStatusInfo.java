@@ -7,7 +7,7 @@ package com.ibm.graph.client.response;
 public class HTTPStatusInfo {
 	
 	protected int code;
-	protected String reason = null;
+	protected String reason = "";
 
 	/**
 	 * Constructor 
