@@ -18,6 +18,7 @@ import java.util.Map;
         com.ibm.graph.client.exception.GraphExceptionTests.class,
         com.ibm.graph.client.response.GraphStatusInfoTests.class,
         com.ibm.graph.client.response.GraphResponseTests.class,
+        com.ibm.graph.client.response.ResultSetTests.class,        
         com.ibm.graph.client.schema.PropertyKeyTests.class,
         com.ibm.graph.client.schema.EntityLabelTests.class,
         com.ibm.graph.client.schema.EdgeLabelTests.class,
@@ -25,13 +26,12 @@ import java.util.Map;
         com.ibm.graph.client.schema.EntityIndexTests.class,
         com.ibm.graph.client.schema.VertexIndexTests.class,
         com.ibm.graph.client.schema.EdgeIndexTests.class,
-        com.ibm.graph.client.response.ResultSetTests.class,
         GraphTests.class,
         com.ibm.graph.client.schema.SchemaTests.class,
-        VertexTests.class,
+        VertexTests.class
+        ,
         EdgeTests.class,
         GremlinTests.class
-        
 })
 public class TestSuite {
 

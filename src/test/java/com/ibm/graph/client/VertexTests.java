@@ -99,7 +99,7 @@ public class VertexTests {
 
         try {
             // create vertex with label and properties
-            v1 = new Vertex(v1_label, new HashMap(){{put("name","John");}});
+            v1 = new Vertex(v1_label, new HashMap<String, Object>(){{put("name","John");}});
             assertNotNull(v1);
             assertNull(v1.getId());         // not set
             assertEquals(v1_label, v1.getLabel());      
@@ -131,7 +131,7 @@ public class VertexTests {
 
             j1 = new JSONObject();
             j1.put("label", "person");
-            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            j1.put("properties", new HashMap<String, Object>(){{put("name", "Jane");put("age", 27);}});
             v1 = Vertex.fromJSONObject(j1);
             assertNotNull(v1);
             assertNull(v1.toString(), v1.getId());         // not set
@@ -145,7 +145,7 @@ public class VertexTests {
 
             j1 = new JSONObject();
             j1.put("label", "person");
-            j1.put("properties", new HashMap(){{put("name", "Jane");put("age", 27);}});
+            j1.put("properties", new HashMap<String, Object>(){{put("name", "Jane");put("age", 27);}});
             j1.put("id", "1");
             v1 = Vertex.fromJSONObject(j1);
             assertNotNull(v1);

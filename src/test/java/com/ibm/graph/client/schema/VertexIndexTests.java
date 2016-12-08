@@ -58,7 +58,7 @@ public class VertexIndexTests {
             // from JSON
             propertyKeys = new String[]{"lastName"};
             indexName = "byLastName";
-            ArrayList<String> pk = new ArrayList(){{add("lastName");}};
+            ArrayList<String> pk = new ArrayList<String>(){{add("lastName");}};
             JSONObject pkJSONobj = new JSONObject();
             pkJSONobj.put("name", indexName);
             pkJSONobj.put("composite", composite);
@@ -244,7 +244,7 @@ public class VertexIndexTests {
             // property propertyKeys is an empty array
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pkJSONobj.put("propertyKeys", pk);
             vi = VertexIndex.fromJSONObject(pkJSONobj);
             assertFalse(true);
@@ -262,7 +262,7 @@ public class VertexIndexTests {
             // property propertyKeys contains an empty string
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pk.add("");
             pkJSONobj.put("propertyKeys", pk);
@@ -282,7 +282,7 @@ public class VertexIndexTests {
             // property propertyKeys contains an empty string
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pk.add("   ");
             pkJSONobj.put("propertyKeys", pk);
@@ -302,7 +302,7 @@ public class VertexIndexTests {
             // property propertyKeys contains a null string
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pk.add(null);
             pkJSONobj.put("propertyKeys", pk);
@@ -322,7 +322,7 @@ public class VertexIndexTests {
             // property composite is missing
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             vi = VertexIndex.fromJSONObject(pkJSONobj);
@@ -341,7 +341,7 @@ public class VertexIndexTests {
             // property composite is not a boolean
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", "notBoolean");
@@ -361,7 +361,7 @@ public class VertexIndexTests {
             // property unique is missing
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", true);
@@ -381,7 +381,7 @@ public class VertexIndexTests {
             // property unique is not a boolean
             pkJSONobj = new JSONObject();
             pkJSONobj.put("name", "byName");
-            pk = new ArrayList();
+            pk = new ArrayList<String>();
             pk.add("name");
             pkJSONobj.put("propertyKeys", pk);
             pkJSONobj.put("composite", "notBoolean");

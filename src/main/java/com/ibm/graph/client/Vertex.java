@@ -32,7 +32,7 @@ public class Vertex extends Entity {
      * @param properties vertex properties
      * @throws Exception placeholder
      */
-    public Vertex(String label, HashMap properties) throws Exception {
+    public Vertex(String label, HashMap<String, Object> properties) throws Exception {
         super(label, properties);
     }
 

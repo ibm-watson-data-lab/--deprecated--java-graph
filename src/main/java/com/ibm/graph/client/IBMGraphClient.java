@@ -186,7 +186,7 @@ public class IBMGraphClient {
             String url = this.baseURL + "/_graphs";
 
             GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 JSONObject result = response.getResultSet().getResultAsJSONObject(0);
                 // {"graphs":["1...3","1","g","zzz"]}
                 List<String> graphIds = new ArrayList<>();
@@ -243,7 +243,7 @@ public class IBMGraphClient {
             }
 
             GraphResponse response = this.doHttpPost(null, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 JSONObject result = response.getResultSet().getResultAsJSONObject(0);
                 // response: {"graphId":"1...3","dbUrl":"https://...3"}
                 if(result.has("graphId")) {
@@ -288,7 +288,7 @@ public class IBMGraphClient {
 
             GraphResponse response = this.doHttpDelete(url);
             // sample success response: {"data":{}}
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 return true;
             }
             else {
@@ -335,7 +335,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/schema";
 
             GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return Schema.fromJSONObject(response.getResultSet().getResultAsJSONObject(0));
                 else {
@@ -371,7 +371,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/schema";
 
             GraphResponse response = this.doHttpPost(schema, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return Schema.fromJSONObject(response.getResultSet().getResultAsJSONObject(0));
                 else {
@@ -414,7 +414,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/index/" + indexName;
 
             GraphResponse response = this.doHttpDelete(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
@@ -461,7 +461,7 @@ public class IBMGraphClient {
             String url = String.format("%s/vertices/%s",this.apiURL,id);
 
             GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsVertex(0);
                 else {
@@ -502,7 +502,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/vertices";
 
             GraphResponse response = this.doHttpPost(vertex, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsVertex(0);
                 else {
@@ -543,7 +543,7 @@ public class IBMGraphClient {
             payload.put("properties", vertex.getProperties());
 
             GraphResponse response = this.doHttpPut(payload, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsVertex(0);
                 else {
@@ -579,7 +579,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/vertices/" + id;
 
             GraphResponse response = this.doHttpDelete(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
@@ -630,7 +630,7 @@ public class IBMGraphClient {
             String url = String.format("%s/edges/%s",this.apiURL,id);
 
             GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsEdge(0);
                 else {
@@ -671,7 +671,7 @@ public class IBMGraphClient {
             String url = this.apiURL + "/edges";
 
             GraphResponse response = this.doHttpPost(edge, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsEdge(0);
                 else {
@@ -695,6 +695,7 @@ public class IBMGraphClient {
     /**
      * Updates the properties of an existing edge in the current graph. The incident vertices and edge label cannot be changed.
      * @param edge the edge to be updated
+     * @return Edge the updated edge
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client    
      * @throws IllegalArgumentException if edge is null or does not contain the id property      
@@ -710,7 +711,7 @@ public class IBMGraphClient {
             JSONObject payload = new JSONObject();
             payload.put("properties", edge.getProperties());            
             GraphResponse response = this.doHttpPut(payload, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsEdge(0);
                 else {
@@ -733,6 +734,7 @@ public class IBMGraphClient {
 
     /**
      * Removes an edge from the current graph.
+     * @param id of the edge to be removed
      * @return true if the edge with the specified id was removed, false if it was not found
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client    
@@ -744,7 +746,7 @@ public class IBMGraphClient {
         try {
             String url = this.apiURL + "/edges/" + id;
             GraphResponse response = this.doHttpDelete(url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
@@ -811,7 +813,7 @@ public class IBMGraphClient {
             httpPost.setEntity(meb.build());
 
             GraphResponse response = this.doHttpRequest(httpPost);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
@@ -869,7 +871,7 @@ public class IBMGraphClient {
             httpPost.setEntity(meb.build());
 
             GraphResponse response = this.doHttpRequest(httpPost);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 if(response.getResultSet().hasResults())
                     return response.getResultSet().getResultAsBoolean(0).booleanValue();
                 else {
@@ -935,7 +937,7 @@ public class IBMGraphClient {
                 postData.put("bindings", bindings);
 
             GraphResponse response = this.doHttpPost(postData, url);
-            if(response.getHTTPStatus().isSuccessResponse()) {
+            if(response.getHTTPStatus().isSuccessStatus()) {
                 return response.getResultSet();
             }
            else {

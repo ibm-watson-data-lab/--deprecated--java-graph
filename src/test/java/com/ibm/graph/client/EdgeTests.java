@@ -57,7 +57,7 @@ public class EdgeTests {
         e1 = null;
 
         try {
-            e1 = new Edge(e1_label, 1, 2, new HashMap(){{put("property1", "value1");}});
+            e1 = new Edge(e1_label, 1, 2, new HashMap<String, Object>(){{put("property1", "value1");}});
             assertNotNull(e1);
             assertNull(e1.getId());
             assertEquals(e1_label, e1.getLabel());
@@ -73,7 +73,7 @@ public class EdgeTests {
         }
         catch(Exception ex) {
             logger.error(ExceptionUtils.getStackTrace(ex));
-            assertFalse("new Edge(\""+ e1_label + "\", 1, 2, new HashMap(){{put(\"property1\", \"value1\");}}) - unexpected exception: " + ex.getMessage(), true);
+            assertFalse("new Edge(\""+ e1_label + "\", 1, 2, new HashMap<String, Object>(){{put(\"property1\", \"value1\");}}) - unexpected exception: " + ex.getMessage(), true);
         }
         
         e1 = null;
@@ -101,7 +101,7 @@ public class EdgeTests {
         j1.put("outVLabel", "person"); // optional 
         j1.put("inVLabel", "pet");     // optional
         j1.put("id", "abc-def");       // optional
-        j1.put("properties", new HashMap(){{put("how much","a little");}});          // optional
+        j1.put("properties", new HashMap<String, Object>(){{put("how much","a little");}});          // optional
 
         e1 = Edge.fromJSONObject(j1);
         assertNotNull(e1);
@@ -318,7 +318,7 @@ public class EdgeTests {
 
         try {
             // create a new edge between the vertices
-            e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId(), new HashMap(){{put("since", "last week");}}));
+            e1 = TestSuite.graphClient.addEdge(new Edge("likes", v1.getId(), v2.getId(), new HashMap<String, Object>(){{put("since", "last week");}}));
             assertNotNull(e1);
             assertEquals("last week", e1.getPropertyValue("since"));
             assertNull(e1.getPropertyValue("how much"));

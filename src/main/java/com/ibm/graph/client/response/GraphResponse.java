@@ -40,7 +40,7 @@ public class GraphResponse {
 			throw new IllegalArgumentException("HTTP response information is missing.");
 
 		this.httpStatus = status;
-		// not every HTTP response contains a body, hence it's okay  if body is null
+		// not every HTTP response contains a body
 		if((body != null) && (body.trim().length() > 0))
 			this.httpResponseBody = body;			
 		else
@@ -51,8 +51,9 @@ public class GraphResponse {
 			logger.debug("HTTP response body: " + this.httpResponseBody);	
 		}
 		
-		if(this.httpStatus.isSuccessResponse()) {
-			// IBM Graph returned success response; if the response body is not empty it should should be valid JSON
+		if(this.httpStatus.isSuccessStatus()) {
+			// HTTP status indicates that the Graph request was processed without issues
+			// if the response body is not empty it should should be valid JSON
 			try {
 				if(this.httpResponseBody.length() > 0) {
 					JSONObject jsonResponse = new JSONObject(this.httpResponseBody);
@@ -76,8 +77,9 @@ public class GraphResponse {
 			}
 		}
 		else {
-			if(this.httpStatus.isClientErrorResponse()) {
-				// IBM Graph returned an error response; the body's content should be valid JSON
+			if(this.httpStatus.isClientErrorStatus()) {
+				// HTTP status indicates that the Graph request failed to an issue caused by the client
+				// if the response body is not empty it should should be valid JSON
 				try {
 					// sample IBM Graph responses: 
 					//	{"code":"BadRequestError","message":"bad request: outV=null, inV=null, label=null"}
@@ -87,14 +89,14 @@ public class GraphResponse {
 				} 
 				catch(JSONException jsonex) {
 					// the response body is not json
-				throw new GraphClientException("IBM Graph response with HTTP code \"" + this.httpStatus.getStatusCode() + "\" and message body " + this.httpResponseBody + "\" cannot be analyzed because it is not valid JSON.", jsonex);
+					throw new GraphClientException("IBM Graph response with HTTP code \"" + this.httpStatus.getStatusCode() + "\" and message body " + this.httpResponseBody + "\" cannot be analyzed because it is not valid JSON.", jsonex);
 				}	
 			}
 			else {
 				// generic server responses that we can't parse
 				// - don't set Graph status information
 				// - don't set ResultSet
-				// the caller has basically access to the HTTP information and the response body to determine how to handle this situation			
+				// Leave it up to the caller to analyze the response body to determine how to handle this situation			
 			}
 		}
 	}

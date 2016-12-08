@@ -143,7 +143,7 @@ public class GremlinTests {
             //
             // gremlin and bindings
             //
-            HashMap<String, Object> bindings = new HashMap();
+            HashMap<String, Object> bindings = new HashMap<String, Object>();
             // no bindings
             rs = TestSuite.graphClient.executeGremlin("g.V().has(\"name\", \"Peer\");", bindings);
             assertNotNull(rs);
