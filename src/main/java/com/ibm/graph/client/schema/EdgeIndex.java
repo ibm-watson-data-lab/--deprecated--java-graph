@@ -5,7 +5,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * Created by markwatson on 11/15/16.
+ * Defines an Edge index that is associated with the Graph schema.
  */
 public class EdgeIndex extends EntityIndex {
 

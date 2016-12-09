@@ -151,7 +151,10 @@ public class SchemaTests {
 
             s1 = null;
             s1 = new Schema(new PropertyKey[]{
-                                new PropertyKey("name", PropertyKey.PropertyKeyDataType.String, PropertyKey.PropertyKeyCardinality.SINGLE)
+                                new PropertyKey("name", PropertyKey.PropertyKeyDataType.String, PropertyKey.PropertyKeyCardinality.SINGLE),
+                                new PropertyKey("dob", PropertyKey.PropertyKeyDataType.Float, PropertyKey.PropertyKeyCardinality.SINGLE),
+                                new PropertyKey("age", PropertyKey.PropertyKeyDataType.Integer, PropertyKey.PropertyKeyCardinality.SINGLE),
+                                new PropertyKey("married", PropertyKey.PropertyKeyDataType.Boolean, PropertyKey.PropertyKeyCardinality.SINGLE)
                             },
                             new VertexLabel[]{
                                 new VertexLabel("person")

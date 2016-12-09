@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by markwatson on 11/8/16.
+ * Provides access to an IBM Graph instance.
  */
 public class IBMGraphClient {
 

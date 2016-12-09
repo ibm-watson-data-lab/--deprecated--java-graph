@@ -4,7 +4,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * Created by markwatson on 11/15/16.
+ * Defines a Vertex and/or Edge property.
  */
 public class PropertyKey extends JSONObject {
 
@@ -134,11 +134,16 @@ public class PropertyKey extends JSONObject {
             throw new IllegalArgumentException("Parameter json does not define property \"dataType\" of type \"String\".");
 
         String name = json.optString("name");
+        String dataTypeStr = null;
         PropertyKeyDataType dataType = null;
         PropertyKeyCardinality cardinality = PropertyKeyCardinality.SINGLE; // default
 
         try {
-            dataType = PropertyKeyDataType.fromString(json.optString("dataType"));
+            dataTypeStr = json.optString("dataType");
+            if (dataTypeStr.equalsIgnoreCase("object")) {
+                return null;
+            }
+            dataType = PropertyKeyDataType.fromString(dataTypeStr);
             if(json.has("cardinality"))
                 cardinality = PropertyKeyCardinality.fromString(json.optString("cardinality"));
         }
