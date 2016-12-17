@@ -14,6 +14,8 @@ Currently the library supports:
  - Adding/getting/updating/deleting edges
  - Creating/loading/updating schema
  - Deleting indexes
+ - Data loading from GraphSON
+ - Data loading from GraphML
 
 # How to build 
 

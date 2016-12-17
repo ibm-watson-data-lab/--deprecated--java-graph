@@ -1,0 +1,24 @@
+{
+  "propertyKeys": [
+   { "name": "name", "dataType": "String", "cardinality": "SINGLE" },
+   { "name": "age", "dataType": "Integer", "cardinality": "SINGLE" },
+   { "name": "lang", "dataType": "String", "cardinality": "SINGLE" },
+   { "name": "weight","dataType":"Float","cardinality":"SINGLE" }
+  ],
+  "vertexLabels": [
+   { "name": "person" },
+   { "name": "software" }
+  ],
+  "edgeLabels": [
+   { "name": "knows", "multiplicity": "MULTI" },
+   { "name":"created","multiplicity":"MULTI" }
+  ],
+  "vertexIndexes": [
+   { "name": "vByName", "propertyKeys": ["name"], "composite": true, "unique": false },
+   { "name": "vByAge", "propertyKeys": ["age"], "composite": true, "unique": false },
+   { "name": "vByLang", "propertyKeys": ["lang"], "composite": true, "unique": false}
+  ],
+  "edgeIndexes" :[
+    { "name": "eByWeight", "propertyKeys": ["weight"], "composite": true, "unique": false }
+  ]
+}
