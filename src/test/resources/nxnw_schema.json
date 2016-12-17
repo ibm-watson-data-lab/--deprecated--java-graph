@@ -1,0 +1,29 @@
+{
+  "propertyKeys": [
+   { "name": "name", "dataType": "String", "cardinality": "SINGLE" },
+   { "name": "gender", "dataType": "String", "cardinality": "SINGLE" },
+   { "name": "age", "dataType": "Integer", "cardinality": "SINGLE" },
+   { "name": "genre", "dataType": "String", "cardinality": "SINGLE" },
+   { "name": "monthly_listeners", "dataType": "String", "cardinality": "SINGLE" },
+   { "name":"date","dataType":"String","cardinality":"SINGLE" },
+   { "name":"time","dataType":"String","cardinality":"SINGLE" }
+  ],
+  "vertexLabels": [
+   { "name": "attendee" },
+   { "name": "band" },
+   { "name": "venue" }
+  ],
+  "edgeLabels": [
+   { "name": "bought_ticket", "multiplicity": "MULTI" },
+   { "name":"advertised_to","multiplicity":"MULTI" },
+   { "name":"performing_at","multiplicity":"MULTI" }
+  ],
+  "vertexIndexes": [
+   { "name": "vByName", "propertyKeys": ["name"], "composite": true, "unique": false },
+   { "name": "vByGender", "propertyKeys": ["gender"], "composite": true, "unique": false },
+   { "name": "vByGenre", "propertyKeys": ["genre"], "composite": true, "unique": false}
+  ],
+  "edgeIndexes" :[
+    { "name": "eByBoughtTicket", "propertyKeys": ["time"], "composite": true, "unique": false }
+  ]
+}

@@ -1,5 +1,8 @@
 package com.ibm.graph.client;
 
+import com.ibm.graph.client.exception.GraphClientException;
+
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.HashMap;
@@ -9,9 +12,9 @@ import java.util.HashMap;
  */
 public class Edge extends Entity {
 
-    private Object outV;
+    private String outV;
     private String outVLabel;
-    private Object inV;
+    private String inV;
     private String inVLabel;
 
     /**
@@ -19,9 +22,10 @@ public class Edge extends Entity {
      * @param label Edge label
      * @param outV id of the vertex from which the edge starts
      * @param inV id of the vertex in which the edge ends
-     * @throws Exception if any of the parameters is missing
+     * @throws IllegalArgumentException label, outV or inV is null
+     * @throws GraphClientException if an error occurred 
      */
-    public Edge(String label, Object outV, Object inV) throws Exception {
+    public Edge(String label, String outV, String inV) throws IllegalArgumentException, GraphClientException {
         this(label, outV, inV, null);
     }
 
@@ -31,9 +35,10 @@ public class Edge extends Entity {
      * @param outV id of the vertex from which the edge starts
      * @param inV id of the vertex in which the edge ends
      * @param properties of this edge, if defined
-     * @throws Exception if the label, outV or inV parameter is missing
+     * @throws GraphClientException if an error occurred 
+     * @throws IllegalArgumentException label, outV or inV is null
      */
-    public Edge(String label, Object outV, Object inV, HashMap<String, Object> properties) throws Exception {
+    public Edge(String label, String outV, String inV, HashMap<String, Object> properties) throws IllegalArgumentException, GraphClientException {
         super(label, properties);
         if(label == null)
             throw new IllegalArgumentException("label parameter cannot be null.");
@@ -42,33 +47,52 @@ public class Edge extends Entity {
         if(inV == null)
             throw new IllegalArgumentException("inV parameter cannot be null.");
 
+        this.type = Entity.EntityType.Edge;
+
         this.outV = outV;
         this.inV = inV;
-        this.put("outV", this.outV);
-        this.put("inV", this.inV);
+        try {
+            this.put("outV", this.outV);
+            this.put("inV", this.inV);
+        }
+        catch(JSONException jsonex) {
+            // ignore: Thrown if key is null, not a string, or the value could not be converted to JSON. 
+        }
     }
 
-    protected void setOutVLabel(String outVLabel) throws Exception {
+    protected void setOutVLabel(String outVLabel) {
         this.outVLabel = outVLabel;
-        if (this.outVLabel != null) 
-            this.put("outVLabel", this.outVLabel);
+        if (this.outVLabel != null) {
+            try {
+                this.put("outVLabel", this.outVLabel);
+            }
+            catch(JSONException jsonex) {
+               // ignore: Thrown if key is null, not a string, or the value could not be converted to JSON. 
+            }
+        }
         else 
             this.remove("outVLabel");
     }
 
-    protected void setInVLabel(String inVLabel) throws Exception {
+    protected void setInVLabel(String inVLabel) {
         this.inVLabel = inVLabel;
-        if (this.inVLabel != null) 
-            this.put("inVLabel", this.inVLabel);
+        if (this.inVLabel != null) {
+            try {
+                this.put("inVLabel", this.inVLabel);
+            }
+            catch(JSONException jsonex) {
+               // ignore: Thrown if key is null, not a string, or the value could not be converted to JSON. 
+            }            
+        }
         else 
             this.remove("inVLabel");
     }
 
-    public Object getOutV() {
+    public String getOutV() {
         return outV;
     }
 
-    public Object getInV() {
+    public String getInV() {
         return inV;
     }
 
@@ -86,9 +110,10 @@ public class Edge extends Entity {
      * Optional properties: id, outVLabel, inVLabel, properties
      * @param json defines the properties of the Edge object
      * @return Edge an edge object
-     * @throws Exception if an error was encountered
+     * @throws IllegalArgumentException if json is null or doesn't define one or more required properties
+     * @throws GraphClientException if an error occurred 
      */
-    public static Edge fromJSONObject(JSONObject json) throws Exception {
+    public static Edge fromJSONObject(JSONObject json) throws IllegalArgumentException, GraphClientException {
         if(json == null) 
             throw new IllegalArgumentException("Parameter json cannot be null");
         if(! json.has("label"))
@@ -98,15 +123,20 @@ public class Edge extends Entity {
         if(! json.has("inV"))
             throw new IllegalArgumentException("Property inV in parameter json is required.");
 
-        Edge edge = new Edge(
-                json.getString("label"),
-                json.get("outV"),
-                json.get("inV")
-        );
-        edge.setId(json.optString("id"));
-        edge.setProperties(json.optJSONObject("properties"));
-        edge.setOutVLabel(json.optString("outVLabel"));
-        edge.setInVLabel(json.optString("inVLabel"));
-        return edge;
+        try {
+            Edge edge = new Edge(
+                    json.getString("label"),
+                    json.getString("outV"),
+                    json.getString("inV")
+            );
+            edge.setId(json.optString("id"));
+            edge.setProperties(json.optJSONObject("properties"));
+            edge.setOutVLabel(json.optString("outVLabel"));
+            edge.setInVLabel(json.optString("inVLabel"));
+            return edge;
+        }
+        catch(JSONException jsonex) {
+            throw new GraphClientException("Error deserializing Edge properties.", jsonex);
+        }
     }
 }
