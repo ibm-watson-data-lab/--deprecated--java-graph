@@ -140,6 +140,11 @@ public class GremlinTests {
             assertNotNull(rs);
             assertEquals(rs.getResponse().toString(), 2, rs.getResultCount());  // v1,v3
 
+            rs = TestSuite.graphClient.executeGremlin("g.V().has(\"married\", true).path();");
+            assertNotNull(rs);
+            assertEquals(rs.getResponse().toString(), 2, rs.getResultCount());  // v1,v3
+
+
             //
             // gremlin and bindings
             //

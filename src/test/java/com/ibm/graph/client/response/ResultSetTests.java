@@ -207,8 +207,8 @@ public class ResultSetTests {
             assertNotNull(rs.toString(), e); 
             assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("id"), e.getId());                       
             assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("label"), e.getLabel());                       
-            assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getInt("inV"), e.getInV());                       
-            assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getInt("outV"), e.getOutV());                       
+            assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("inV"), e.getInV());                       
+            assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("outV"), e.getOutV());                       
             assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("inVLabel"), e.getInVLabel());                       
             assertEquals(e.toString(), response.getJSONObject("result").getJSONArray("data").getJSONObject(0).getString("outVLabel"), e.getOutVLabel());                       
 

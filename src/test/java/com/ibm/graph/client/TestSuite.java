@@ -32,11 +32,15 @@ import java.util.Map;
         VertexIndexTests.class,         // tests class com.ibm.graph.client.schema.VertexIndex
         EdgeIndexTests.class,           // tests class com.ibm.graph.client.schema.EdgeIndex
         SchemaClassTests.class,         // tests class com.ibm.graph.client.schema.Schema
+        PathClassTests.class,           // tests class com.ibm.graph.client.Path
+        EdgeClassTests.class,           // tests class com.ibm.graph.client.Edge
+        VertexClassTests.class,         // tests class com.ibm.graph.client.Vertex
         GraphTests.class,               // tests graph specific methods in com.ibm.graph.client.IBMGraphClient
         SchemaTests.class,              // tests schema specific methods in com.ibm.graph.client.IBMGraphClient
         VertexTests.class,              // tests vertex specific methods in com.ibm.graph.client.IBMGraphClient
         EdgeTests.class,                // tests edge specific methods in com.ibm.graph.client.IBMGraphClient
         GremlinTests.class,             // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient
+        GremlinPathTests.class,         // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient (path)
         GraphSONTests.class             // tests graphSON load methods in com.ibm.graph.client.IBMGraphClient
 })
 public class TestSuite {

@@ -32,11 +32,14 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Provides access to an IBM Graph instance.
  */
 public class IBMGraphClient {
+
+    private String implementationVersion;
 
     private String apiURL;
     private String username;
@@ -100,6 +103,27 @@ public class IBMGraphClient {
         // TODO error checking
         this.baseURL = this.apiURL.substring(0, this.apiURL.lastIndexOf('/'));
         this.graphId = this.apiURL.substring(this.apiURL.lastIndexOf('/') + 1);
+
+        // housekeeping
+        try {
+            implementationVersion = getClass().getPackage().getImplementationVersion();
+            if((implementationVersion == null) || (implementationVersion == "")){
+                Properties p = new Properties();
+                if(getClass().getResourceAsStream("/project.properties") != null) {
+                    p.load(getClass().getResourceAsStream("/project.properties"));
+                    implementationVersion = p.getProperty("ImplementationVersion");    
+                }
+            }
+        }
+        catch(Exception ex){
+            // ignore
+            logger.debug("Error identifying IBMGraphClient version.",ex);
+        }  
+        finally {
+            if(implementationVersion == null) 
+                implementationVersion = "";
+            logger.debug("IBMGraphClient version: " + implementationVersion);
+        }
     }
 
     private void initSession() throws GraphClientException, GraphException {
@@ -1026,7 +1050,8 @@ public class IBMGraphClient {
     private GraphResponse doHttpRequest(HttpUriRequest request) throws GraphClientException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
-        try {                
+        try {
+            request.setHeader("User-Agent", "java-graph/" + implementationVersion + " (Java " + System.getProperty("java.version") + ")");
             logger.debug(String.format("Sending HTTP request %s", request.toString()));
             httpResponse = httpclient.execute(request);
             HttpEntity httpEntity = httpResponse.getEntity();

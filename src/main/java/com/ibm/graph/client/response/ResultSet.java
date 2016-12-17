@@ -2,6 +2,7 @@ package com.ibm.graph.client.response;
 
 import com.ibm.graph.client.exception.GraphClientException;
 import com.ibm.graph.client.Edge;
+import com.ibm.graph.client.Path;
 import com.ibm.graph.client.Vertex;
 
 import java.util.ArrayList;
@@ -55,7 +56,8 @@ public class ResultSet {
 					this.data = response.getJSONObject("result").getJSONArray("data");
 			}
 			else {
-				// some responses don't follow the result > data structure: {"graphs":["1...3","1","g","zzz"]}
+				// some responses don't follow the result > data structure, e.g. {"graphs":["1...3","1","g","zzz"]}
+				// if the response is TODO
 				// wrap those responses in an array; this way a response is accessible as the first ResultSet element
 				// [{"graphs":["1...3","1","g","zzz"]}]
 				this.data = new JSONArray();
@@ -218,6 +220,52 @@ public class ResultSet {
 			}		
 		}
 		return edges.iterator();
+	};
+
+	/**
+	 * Returns the index-th result from the result set as a com.ibm.graph.client.Path or null if the result cannot be converted
+	 * @param index a number between 0 (first result) and (getResultCount() - 1)
+	 * @return Path the index-th result from the result set, or null
+	 * @throws IndexOutOfBoundsException if index is not valid for this result set
+	 */
+	public Path getResultAsPath(int index) throws IndexOutOfBoundsException {
+		if((index >= 0) && (index <= this.data.length() - 1)) {
+			try {
+				if(! this.data.isNull(index))
+					return Path.fromJSONObject(this.data.getJSONObject(index));
+				return null;				
+			}
+			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result " + index + " cannot be converted to Path.", ex);
+				logger.debug("Result: " + this.data.get(index).toString());
+				return null;
+			}
+		}
+		else {
+			throw new IndexOutOfBoundsException("The result set contains " + this.data.length() + " results. Index starts at 0.");
+		}
+	};
+
+	/**
+	 * Attempts to interpret each result as an com.ibm.graph.client.Path and returns an iterator.
+	 * @return Iterator Path iterator or null if the result set does not represent an array of paths
+	 */
+	public Iterator<Path> getPathResultIterator() {
+		ArrayList<Path> paths = new ArrayList<Path>();
+		for(int i = 0; i < this.data.length(); i++) {
+			try {
+				if(! this.data.isNull(i))				
+					paths.add(Path.fromJSONObject(this.data.getJSONObject(i)));
+			}
+			catch(Exception ex) {
+				// suppress error
+				logger.debug("Result set could not be interpreted as a Path array.", ex);
+				logger.debug("Result set: " + this.data.toString());
+				return null;								
+			}		
+		}
+		return paths.iterator();
 	};
 
 	/**

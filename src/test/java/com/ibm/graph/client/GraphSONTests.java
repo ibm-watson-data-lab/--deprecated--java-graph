@@ -114,7 +114,7 @@ public class GraphSONTests {
             String nameValue = "In-memory Humphrey";
             JSONArray nameProperty = new JSONArray();
             nameProperty.add(new JSONObject(){{put("id", GraphSONTests.getNextId());put("value", nameValue);}});
-            content.put("properties", new HashMap(){{put("name", nameProperty);}});  
+            content.put("properties", new HashMap<String, Object>(){{put("name", nameProperty);}});  
             // load
             assertTrue(TestSuite.graphClient.loadGraphSON(content.toString()));
             // test load accuracy
@@ -237,7 +237,7 @@ public class GraphSONTests {
             String nameValue = "Persistent Humphrey";
             JSONArray nameProperty = new JSONArray();
             nameProperty.add(new JSONObject(){{put("id", GraphSONTests.getNextId());put("value", nameValue);}});
-            content.put("properties", new HashMap(){{put("name", nameProperty);}});  
+            content.put("properties", new HashMap<String, Object>(){{put("name", nameProperty);}});  
 
             temp = File.createTempFile("a_graphson_file", ".graphson");
             BufferedWriter out = new BufferedWriter(new FileWriter(temp.getAbsolutePath()));
