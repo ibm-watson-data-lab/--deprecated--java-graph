@@ -802,7 +802,6 @@ public class IBMGraphClient {
      * Bulk load methods
      *  - loadGraphSON
      *  - loadGraphSONfromFile
-     *  TODO
      *  - loadGraphML
      *  - loadGraphMLfromFile
      * ----------------------------------------------------------------     
@@ -810,7 +809,7 @@ public class IBMGraphClient {
 
     /**
      * Loads graphSON string into the graph
-     * @param graphson data to be loaded
+     * @param graphson to be loaded
      * @return boolean true if the data was loaded
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client         
@@ -914,6 +913,115 @@ public class IBMGraphClient {
         }        
         catch(Exception ex) {
             throw new GraphClientException("Error loading graphson from file.", ex);            
+        } 
+    } 
+
+   /**
+     * Loads graphML string into the graph
+     * @param graphML to be loaded
+     * @return boolean true if the data was loaded
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client         
+     * @throws IllegalArgumentException if graphML is an empty String or exceeds 10MB
+     */
+    public boolean loadGraphML(String graphml) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((graphml == null) || (graphml.trim().length() == 0)){
+            throw new IllegalArgumentException("Parameter \"graphml\" is null or empty.");
+        }
+        if(graphml.length() > 10485760) { // (10 * 1024 * 1024)
+            throw new IllegalArgumentException("Parameter \"graphml\" exceeds maximum length (10MB).");
+        }
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
+        try {
+            String url = this.apiURL + "/bulkload/graphml/";
+            HttpPost httpPost = new HttpPost(url);
+            httpPost.setHeader("Authorization", this.gdsTokenAuth);
+            httpPost.setHeader("Accept", "application/json");
+            MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+            meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            meb.addPart("graphml", new StringBody(graphml,ContentType.MULTIPART_FORM_DATA));
+            httpPost.setEntity(meb.build());
+
+            GraphResponse response = this.doHttpRequest(httpPost);
+            if(response.getHTTPStatus().isSuccessStatus()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("GraphML was loaded. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
+            }
+            else {
+                throw new GraphException("Error loading graphML.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
+        catch(Exception ex) {
+            throw new GraphClientException("Error loading graphML.", ex);            
+        } 
+    } 
+
+    /**
+     * Loads graphML from filename into the graph
+     * @param filename file containing graphML
+     * @return boolean true if the data was loaded
+     * @throws GraphException if an error occurred on the server
+     * @throws GraphClientException if an error occurred on the client  
+     * @throws IllegalArgumentException if filename does not identify a valid file (exists, is readable and less than 10MB in size)
+     */
+    public boolean loadGraphMLfromFile(String filename) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((filename == null) || (filename.trim().length() == 0)){
+            throw new IllegalArgumentException("Parameter \"" + filename + "\" is missing or empty.");
+        }
+        File graphmlFile = new File(filename);
+        if(! graphmlFile.canRead()) {
+            throw new IllegalArgumentException("File " + filename + " was not found or cannot be read.");
+        }
+        if(graphmlFile.length() > 10485760) { // (10 * 1024 * 1024)
+            throw new IllegalArgumentException("File " + filename + " is larger than 10MB and can therefore not be processed.");
+        }
+
+        if (this.gdsTokenAuth == null) {
+            this.initSession();
+        }
+        try {
+            String url = this.apiURL + "/bulkload/graphml/";
+
+            HttpPost httpPost = new HttpPost(url);
+            httpPost.setHeader("Authorization", this.gdsTokenAuth);
+            httpPost.setHeader("Accept", "application/json");
+            FileBody fb = new FileBody(graphmlFile);
+            MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+            meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            meb.addPart("graphml", fb);
+            httpPost.setEntity(meb.build());
+
+            GraphResponse response = this.doHttpRequest(httpPost);
+            if(response.getHTTPStatus().isSuccessStatus()) {
+                if(response.getResultSet().hasResults())
+                    return response.getResultSet().getResultAsBoolean(0).booleanValue();
+                else {
+                    throw new GraphClientException("GraphML was loaded. IBM Graph responded with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\".");
+                }
+            }
+            else {
+                throw new GraphException("Error loading graphML from file.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());                
+            }
+        }  
+        catch(GraphClientException gcex) {
+            throw gcex;
+        }
+        catch(GraphException gex) {
+            throw gex;
+        }        
+        catch(Exception ex) {
+            throw new GraphClientException("Error loading graphML from file.", ex);            
         } 
     } 
 
