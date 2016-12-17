@@ -393,7 +393,7 @@ public class VertexTests {
         assertNull("TestSuite.graphClient.getVertex(null)", v1);
         v1 = null;
         try {
-            v1 = TestSuite.graphClient.getVertex(1234567);
+            v1 = TestSuite.graphClient.getVertex("1234567");
             assertNull("TestSuite.graphClient.getVertex(1234567)", v1);
         }
         catch(Exception ex) {

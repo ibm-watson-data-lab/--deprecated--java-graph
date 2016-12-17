@@ -30,6 +30,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -476,29 +477,24 @@ public class IBMGraphClient {
      * @return com.ibm.graph.client.Vertex or null if no vertex with the specified id exists
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client    
-     * @throws IllegalArgumentException id if is null 
+     * @throws IllegalArgumentException if id is null or an empty string
      */
-    public Vertex getVertex(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
-        if(id == null)
-            throw new IllegalArgumentException("Parameter id null.");
+    public Vertex getVertex(String id) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((id == null) || (id.trim().length() == 0))
+            throw new IllegalArgumentException("Parameter \"id\" is null or empty.");
         try {
-            String url = String.format("%s/vertices/%s",this.apiURL,id);
 
-            GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessStatus()) {
-                if(response.getResultSet().hasResults())
-                    return response.getResultSet().getResultAsVertex(0);
-                else {
-                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
-                }
+            // construct gremlin step 
+            // sample request: g.V(<vertex_id>);   
+            String getvertex = "g.V(" + id + ")";    
+
+            ResultSet rs = executeGremlin(getvertex);
+            if(rs.getResultCount() == 1) {
+                return rs.getResultAsVertex(0);    
             }
             else {
-                if(response.getHTTPStatus().getStatusCode() == 404) {
-                    // vertex not found. don't treat this as an error
-                    return null;
-                }
-                throw new GraphException("Error getting vertex " + id + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
-            }     
+                return null;
+            }               
         }
         catch(GraphClientException gcex) {
             throw gcex;
@@ -521,20 +517,46 @@ public class IBMGraphClient {
      */
     public Vertex addVertex(Vertex vertex) throws GraphException, GraphClientException, IllegalArgumentException {
         if(vertex == null)
-            throw new IllegalArgumentException("Parameter vertex is null.");
+            throw new IllegalArgumentException("Parameter \"vertex\" is null.");
         try {
-            String url = this.apiURL + "/vertices";
+            // construct gremlin step http://tinkerpop.apache.org/docs/3.0.1-incubating/#addvertex-step
+            // sample request: g.addV(label,'person','<property_name>','<property_value>')
+            // use bindings for better performance
+            StringBuffer addvertex = new StringBuffer("g.addV(");
+            HashMap<String, Object> bindings = new HashMap<String, Object>();
+            boolean firstinlist = true;
+            if(vertex.getLabel() != null) {
+                // a custom label is defined for this vertex
+                addvertex.append("label, var_label");
+                bindings.put("var_label", vertex.getLabel());
+                firstinlist = false;
+            }
+            HashMap<String, Object> vertexproperties = vertex.getProperties();
+            if(vertexproperties != null) {
+                // properties are defined for this vertex
+                Iterator<String> propertynameIt = vertexproperties.keySet().iterator();
+                String propertyname = null;
 
-            GraphResponse response = this.doHttpPost(vertex, url);
-            if(response.getHTTPStatus().isSuccessStatus()) {
-                if(response.getResultSet().hasResults())
-                    return response.getResultSet().getResultAsVertex(0);
-                else {
-                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+                while(propertynameIt.hasNext()) {
+                    propertyname = propertynameIt.next();
+                    // ", <property_name>, <property_value>"
+                    if(firstinlist == true) 
+                        addvertex.append("\"" + propertyname + "\",var_" + propertyname);
+                    else
+                        addvertex.append(",\"" + propertyname + "\",var_" + propertyname);
+                    firstinlist = false;                                             
+                    bindings.put("var_" + propertyname, vertexproperties.get(propertyname)); 
                 }
             }
-            else 
-                throw new GraphException("Error adding vertex.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());        
+            addvertex.append(");");    
+            
+            ResultSet rs = executeGremlin(addvertex.toString(), bindings);
+            if(rs.getResultCount() > 0) {
+                return rs.getResultAsVertex(0);    
+            }
+            else {
+                return null;
+            }               
         }
         catch(GraphClientException gcex) {
             throw gcex;
@@ -918,7 +940,7 @@ public class IBMGraphClient {
 
    /**
      * Loads graphML string into the graph
-     * @param graphML to be loaded
+     * @param graphml to be loaded
      * @return boolean true if the data was loaded
      * @throws GraphException if an error occurred on the server
      * @throws GraphClientException if an error occurred on the client         
