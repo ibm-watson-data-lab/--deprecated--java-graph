@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-/*        GraphExceptionTests.class,      // tests class com.ibm.graph.client.exception.GraphException     
+        GraphExceptionTests.class,      // tests class com.ibm.graph.client.exception.GraphException     
         HTTPStatusInfoTests.class,      // tests class com.ibm.graph.client.response.HTTPStatusInfo
         GraphStatusInfoTests.class,     // tests class com.ibm.graph.client.response.GraphStatusInfo
         GraphResponseTests.class,       // tests class com.ibm.graph.client.response.GraphResponse
@@ -42,7 +42,7 @@ import java.util.Map;
         GremlinTests.class,             // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient
         GremlinPathTests.class,         // tests gremlin specific methods in com.ibm.graph.client.IBMGraphClient (path)
         GraphSONTests.class,            // tests graphSON load methods in com.ibm.graph.client.IBMGraphClient
-*/        GraphMLTests.class,             // tests graphML load methods in com.ibm.graph.client.IBMGraphClient
+        GraphMLTests.class,             // tests graphML load methods in com.ibm.graph.client.IBMGraphClient
         GraphMLTests2.class             // tests graphML load methods in com.ibm.graph.client.IBMGraphClient
 })
 public class TestSuite {
