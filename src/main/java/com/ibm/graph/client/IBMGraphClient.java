@@ -541,11 +541,11 @@ public class IBMGraphClient {
                     propertyname = propertynameIt.next();
                     // ", <property_name>, <property_value>"
                     if(firstinlist == true) 
-                        addvertex.append("\"" + propertyname + "\",var_" + propertyname);
+                        addvertex.append("\"" + propertyname + "\",var_p_" + propertyname);
                     else
-                        addvertex.append(",\"" + propertyname + "\",var_" + propertyname);
+                        addvertex.append(",\"" + propertyname + "\",var_p_" + propertyname);
                     firstinlist = false;                                             
-                    bindings.put("var_" + propertyname, vertexproperties.get(propertyname)); 
+                    bindings.put("var_p_" + propertyname, vertexproperties.get(propertyname)); 
                 }
             }
             addvertex.append(");");    
@@ -669,27 +669,20 @@ public class IBMGraphClient {
      * @throws GraphClientException if an error occurred on the client    
      * @throws IllegalArgumentException if id is null 
      */
-    public Edge getEdge(Object id) throws GraphException, GraphClientException, IllegalArgumentException {
-        if(id == null)
-            throw new IllegalArgumentException("Parameter id is null.");  
+    public Edge getEdge(String id) throws GraphException, GraphClientException, IllegalArgumentException {
+        if((id == null) || (id.trim().length() == 0))
+            throw new IllegalArgumentException("Parameter \"id\" is null or empty.");
         try {
-            String url = String.format("%s/edges/%s",this.apiURL,id);
-
-            GraphResponse response = this.doHttpGet(url);
-            if(response.getHTTPStatus().isSuccessStatus()) {
-                if(response.getResultSet().hasResults())
-                    return response.getResultSet().getResultAsEdge(0);
-                else {
-                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
-                }
+            // construct gremlin step 
+            // sample request: g.E(<vertex_id>);   
+            String getedge = "g.E(" + id + ")";    
+            ResultSet rs = executeGremlin(getedge);
+            if(rs.getResultCount() == 1) {
+                return rs.getResultAsEdge(0);    
             }
             else {
-                if(response.getHTTPStatus().getStatusCode() == 404) {
-                    // edge not found. don't treat this as an error
-                    return null;
-                }
-                throw new GraphException("Error getting edge " + id + ".", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());            
-            }
+                return null;
+            }               
         }
         catch(GraphClientException gcex) {
             throw gcex;
@@ -712,20 +705,38 @@ public class IBMGraphClient {
      */
     public Edge addEdge(Edge edge) throws GraphException, GraphClientException, IllegalArgumentException {
         if(edge == null)
-            throw new IllegalArgumentException("Parameter edge is null.");  
+            throw new IllegalArgumentException("Parameter \"edge\" is null.");  
         try {
-            String url = this.apiURL + "/edges";
+            // construct gremlin step http://tinkerpop.apache.org/docs/3.0.1-incubating/#addedge-step
+            // sample request: g.V(<vertex_id>).next().addEdge(<label>,g.V(<vertex>).next(),'<property_name>','<property_value>')
+            // use bindings for better performance:
+            // g.V(<var_outv>).next().addEdge(<var_elabel>,g.V(<var_inv>).next(),'<property_name>','<property_value>')
+            StringBuffer addedge = new StringBuffer("g.V(var_outv).next().addEdge(var_elabel,g.V(var_inv).next()");
+            HashMap<String, Object> bindings = new HashMap<String, Object>();
+            bindings.put("var_outv", Integer.parseInt(edge.getOutV()));
+            bindings.put("var_elabel", edge.getLabel());
+            bindings.put("var_inv", Integer.parseInt(edge.getInV()));
 
-            GraphResponse response = this.doHttpPost(edge, url);
-            if(response.getHTTPStatus().isSuccessStatus()) {
-                if(response.getResultSet().hasResults())
-                    return response.getResultSet().getResultAsEdge(0);
-                else {
-                    throw new GraphClientException("IBM Graph response with HTTP code \"" + response.getHTTPStatus().getStatusCode() + "\" and message body " + response.getResponseBody() + "\" cannot be processed.");
+            HashMap<String, Object> edgeproperties = edge.getProperties();
+            if(edgeproperties != null) {
+                // properties are defined for this vertex
+                Iterator<String> propertynameIt = edgeproperties.keySet().iterator();
+                String propertyname = null;
+                while(propertynameIt.hasNext()) {
+                    propertyname = propertynameIt.next();
+                    // ", <property_name>, <property_value>"
+                    addedge.append(",\"" + propertyname + "\",var_p_" + propertyname);
+                    bindings.put("var_p_" + propertyname, edgeproperties.get(propertyname)); 
                 }
             }
-            else 
-                throw new GraphException("Error adding edge.", response.getHTTPStatus(), response.getResponseBody(), response.getGraphStatus());
+            addedge.append(");");            
+            ResultSet rs = executeGremlin(addedge.toString(), bindings);
+            if(rs.getResultCount() == 1) {
+                return rs.getResultAsEdge(0);    
+            }
+            else {
+                return null;
+            }               
         }
         catch(GraphClientException gcex) {
             throw gcex;
@@ -734,7 +745,7 @@ public class IBMGraphClient {
             throw gex;
         }
         catch(Exception ex) {
-            throw new GraphClientException("Error adding vertex.", ex);              
+            throw new GraphClientException("Error adding Edge.", ex);              
         }
     }
 
