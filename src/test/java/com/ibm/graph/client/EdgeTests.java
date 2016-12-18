@@ -158,7 +158,7 @@ public class EdgeTests {
 
         e1 = null;
         try {
-            e1 = TestSuite.graphClient.getEdge(1234567);
+            e1 = TestSuite.graphClient.getEdge("1234567");
             assertNull("TestSuite.graphClient.getEdge(1234567)", e1);
         }
         catch(Exception ex) {
