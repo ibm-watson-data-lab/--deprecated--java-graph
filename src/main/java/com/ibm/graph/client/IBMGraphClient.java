@@ -8,6 +8,7 @@ import com.ibm.graph.client.schema.Schema;
 import com.ibm.graph.client.response.ResultSet;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -18,6 +19,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
@@ -127,17 +129,19 @@ public class IBMGraphClient {
         }
     }
 
-    private void initSession() throws GraphClientException, GraphException {
+    private void initSession() throws GraphClientException {
         if (this.baseURL == null) {
             throw new GraphClientException("Invalid configuration. Please specify a valid apiURL, username, and password.");
         }
         String basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
         HttpGet httpGet = new HttpGet(this.baseURL + "/_session");
         httpGet.setHeader("Authorization", basicAuthHeader);
-        CloseableHttpClient httpclient = HttpClients.createDefault();
+        // time out if no response was received after 5 seconds
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(5 * 1000).build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
         CloseableHttpResponse httpResponse = null;
         try {
-            httpResponse = httpclient.execute(httpGet);
+            httpResponse = httpClient.execute(httpGet);
             HttpEntity httpEntity = httpResponse.getEntity();
             String content = EntityUtils.toString(httpEntity);
             EntityUtils.consume(httpEntity);
@@ -855,13 +859,9 @@ public class IBMGraphClient {
         if(graphson.length() > 10485760) { // (10 * 1024 * 1024)
             throw new IllegalArgumentException("Parameter graphson exceeds maximum length (10MB).");
         }
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         try {
             String url = this.apiURL + "/bulkload/graphson/";
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader("Authorization", this.gdsTokenAuth);
             httpPost.setHeader("Accept", "application/json");
             MultipartEntityBuilder meb = MultipartEntityBuilder.create();
             meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
@@ -910,15 +910,10 @@ public class IBMGraphClient {
         if(graphsonFile.length() > 10485760) { // (10 * 1024 * 1024)
             throw new IllegalArgumentException("File " + filename + " is larger than 10MB and can therefore not be processed.");
         }
-
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         try {
             String url = this.apiURL + "/bulkload/graphson/";
 
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader("Authorization", this.gdsTokenAuth);
             httpPost.setHeader("Accept", "application/json");
             FileBody fb = new FileBody(graphsonFile);
             MultipartEntityBuilder meb = MultipartEntityBuilder.create();
@@ -964,13 +959,9 @@ public class IBMGraphClient {
         if(graphml.length() > 10485760) { // (10 * 1024 * 1024)
             throw new IllegalArgumentException("Parameter \"graphml\" exceeds maximum length (10MB).");
         }
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         try {
             String url = this.apiURL + "/bulkload/graphml/";
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader("Authorization", this.gdsTokenAuth);
             httpPost.setHeader("Accept", "application/json");
             MultipartEntityBuilder meb = MultipartEntityBuilder.create();
             meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
@@ -1019,15 +1010,10 @@ public class IBMGraphClient {
         if(graphmlFile.length() > 10485760) { // (10 * 1024 * 1024)
             throw new IllegalArgumentException("File " + filename + " is larger than 10MB and can therefore not be processed.");
         }
-
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         try {
             String url = this.apiURL + "/bulkload/graphml/";
 
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader("Authorization", this.gdsTokenAuth);
             httpPost.setHeader("Accept", "application/json");
             FileBody fb = new FileBody(graphmlFile);
             MultipartEntityBuilder meb = MultipartEntityBuilder.create();
@@ -1133,23 +1119,15 @@ public class IBMGraphClient {
      */
 
     private GraphResponse doHttpGet(String url) throws GraphException, GraphClientException {
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Authorization", this.gdsTokenAuth);
         httpGet.setHeader("Accept", "application/json");
         logger.debug(String.format("Making HTTP GET request to %s",url));
         return doHttpRequest(httpGet);
     }
 
     private GraphResponse doHttpPost(JSONObject json, String url) throws GraphException, GraphClientException {
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         String payload = (json == null ? "" : json.toString());
         HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Authorization", this.gdsTokenAuth);
         httpPost.setHeader("Content-Type", "application/json");
         httpPost.setHeader("Accept", "application/json");
         httpPost.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
@@ -1158,12 +1136,8 @@ public class IBMGraphClient {
     }
 
     private GraphResponse doHttpPut(JSONObject json, String url) throws GraphException, GraphClientException {
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         String payload = json.toString();
         HttpPut httpPut = new HttpPut(url);
-        httpPut.setHeader("Authorization", this.gdsTokenAuth);
         httpPut.setHeader("Content-Type", "application/json");
         httpPut.setHeader("Accept", "application/json");
         httpPut.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
@@ -1172,11 +1146,7 @@ public class IBMGraphClient {
     }
 
     private GraphResponse doHttpDelete(String url) throws GraphException, GraphClientException {
-        if (this.gdsTokenAuth == null) {
-            this.initSession();
-        }
         HttpDelete httpDelete = new HttpDelete(url);
-        httpDelete.setHeader("Authorization", this.gdsTokenAuth);
         httpDelete.setHeader("Accept", "application/json");
         logger.debug(String.format("Making HTTP DELETE request to %s",url));
         return doHttpRequest(httpDelete);
@@ -1189,10 +1159,21 @@ public class IBMGraphClient {
      * @throws GraphClientException if a fatal  error was encountered 
      **/
     private GraphResponse doHttpRequest(HttpUriRequest request) throws GraphClientException {
+
+        if (this.gdsTokenAuth == null) {
+            // obtain a session token for better performance
+            // if an authorization error occurs this request will fail and throw 
+            // a GraphClientException
+            this.initSession();
+        }
+
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = null;
         try {
+            // set user-agent to identify this driver
             request.setHeader("User-Agent", "java-graph/" + implementationVersion + " (Java " + System.getProperty("java.version") + ")");
+            // set authorization header
+            request.setHeader("Authorization", this.gdsTokenAuth);
             logger.debug(String.format("Sending HTTP request %s", request.toString()));
             httpResponse = httpclient.execute(request);
             HttpEntity httpEntity = httpResponse.getEntity();
@@ -1207,11 +1188,21 @@ public class IBMGraphClient {
                                        httpResponse.getStatusLine().getReasonPhrase(), 
                                        content));  
 
+            if(httpResponse.getStatusLine().getStatusCode() == 403) {
+                // https://en.wikipedia.org/wiki/HTTP_403
+                // the session token might have expired; try to obtain a new one
+                this.gdsTokenAuth = null;
+                return doHttpRequest(request);
+            }
+
             // assemble response information
             GraphResponse response = new GraphResponse(new HTTPStatusInfo(httpResponse.getStatusLine().getStatusCode(),
                                                                           httpResponse.getStatusLine().getReasonPhrase()),
                                                        content);
             return response;
+        }
+        catch(GraphClientException gcex) {
+            throw gcex;
         }
         catch(Exception ex) {
             logger.error("Error processing HTTP request ", ex);            
