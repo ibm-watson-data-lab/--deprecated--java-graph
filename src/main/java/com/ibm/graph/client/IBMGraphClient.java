@@ -136,8 +136,8 @@ public class IBMGraphClient {
         String basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
         HttpGet httpGet = new HttpGet(this.baseURL + "/_session");
         httpGet.setHeader("Authorization", basicAuthHeader);
-        // time out if no response was received after 2 seconds
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(2 * 1000).build();
+        // time out if no response was received after 5 seconds
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(5 * 1000).build();
         CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
         CloseableHttpResponse httpResponse = null;
         try {
