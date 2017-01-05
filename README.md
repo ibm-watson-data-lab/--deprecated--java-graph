@@ -30,7 +30,7 @@ $ cf service-key ibm-graph-test Credentials-1
 $ export TEST_API_URL=<apiURL from Credentials-1>
 $ export TEST_USERNAME=<username from Credentials-1>
 $ export TEST_PASSWORD=<password from Credentials-1>
-$ mvn clean install
+$ mvn clean package
 ```
 
 > Source code and javadoc are located in the `target` directory.
@@ -40,7 +40,15 @@ To build the library and skip the JUNIT test
 ```
 $ git clone https://github.com/ibm-cds-labs/java-graph.git
 $ cd java-graph
-$ mvn clean install -Dmaven.test.skip=true
+$ mvn clean package -Dmaven.test.skip=true
+```
+
+To build and install the library in your local Maven repository 
+
+```
+$ git clone https://github.com/ibm-cds-labs/java-graph.git
+$ cd java-graph
+$ mvn clean install -Dmaven.test.skip=true -Dgpg.skip=true
 ```
 
 # How to test 
