@@ -70,4 +70,14 @@ $ mvn clean test
 
 # How to consume
 
-Refer to the instructions in the [Sample application README](https://github.com/ibm-cds-labs/hello-graph-java)
+Add the following dependency to your application's `pom.xml`:
+
+```
+   <dependency>
+      <groupId>com.ibm.graph</groupId>
+      <artifactId>graphclient</artifactId>
+      <version>0.1.0</version>
+    </dependency> 
+```    
+
+Refer to the [Sample application](https://github.com/ibm-cds-labs/hello-graph-java) for details on how to manipulate and traverse a graph.
