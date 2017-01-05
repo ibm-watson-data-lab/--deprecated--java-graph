@@ -70,41 +70,4 @@ $ mvn clean test
 
 # How to consume
 
-```
-import com.ibm.graph.client.*;
-import com.ibm.graph.client.schema.*;
-
-String apiURL = "https://ibmgraph-alpha.ng.bluemix.net/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/g";
-String username = "";
-String password = "";
-IBMGraphClient graphClient = new IBMGraphClient(apiURL, username, password);
-
-Schema schema = schema = new Schema(
-    new PropertyKey[]{
-        new PropertyKey("name", "String", "SINGLE")
-    },
-    new VertexLabel[]{
-        new VertexLabel("person")
-    },
-    new EdgeLabel[]{
-        new EdgeLabel("friend")
-    },
-    new VertexIndex[]{
-        new VertexIndex("vertexByName", new String[]{"name"}, true, true)
-    },
-    new EdgeIndex[]{}
-);
-schema = graphClient.saveSchema(schema);
-
-Vertex vertex = new Vertex("person", new HashMap() {{
-    put("name", "John");
-}});
-vertex = graphClient.addVertex(vertex);
-
-Edge edge = new Edge("friend", outVertex.getId(), inVertex.getId(), new HashMap() {{
-    put("date", d);
-}});
-edge = graphClient.addEdge(edge);
-```
-
-Work in progress!
+Refer to the instructions in the [Sample application README](https://github.com/ibm-cds-labs/hello-graph-java)
