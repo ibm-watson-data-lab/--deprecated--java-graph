@@ -80,4 +80,16 @@ Add the following dependency to your application's `pom.xml`:
     </dependency> 
 ```    
 
-Refer to the [Sample application](https://github.com/ibm-cds-labs/hello-graph-java) for details on how to manipulate and traverse a graph.
+> Use [this link](http://search.maven.org/#search|ga|1|g%3A%22com.ibm.graph%22) to identify the latest library version. 
+
+The following example illustrates how to create a graph and connect to it. Refer to the [Sample application](https://github.com/ibm-cds-labs/hello-graph-java) or the [Javadoc](http://search.maven.org/remotecontent?filepath=com/ibm/graph/graphclient/0.1.0/graphclient-0.1.0-javadoc.jar) for details on how to manipulate and traverse a graph using this library.
+
+
+```
+// connect to IBM Graph service
+IBMGraphClient graphClient = new IBMGraphClient(apiURL, username, password);
+// create a new graph
+String graphId = graphClient.createGraph();
+// switch to new graph
+graphClient.setGraph(graphId);
+```
