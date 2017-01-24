@@ -4,8 +4,6 @@ This is an Experimental Java library for working with IBM Graph.
 
 [![Build Status](https://travis-ci.org/ibm-cds-labs/java-graph.svg?branch=master)](https://travis-ci.org/ibm-cds-labs/java-graph)
 
-Use with caution!
-
 Currently the library supports:
  
  - Executing Gremlin queries
