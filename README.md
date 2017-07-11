@@ -1,5 +1,7 @@
 # Experimental Java Client for IBM Graph
 
+:no_entry_sign: This project is no longer maintained
+
 This is an Experimental Java library for working with IBM Graph.
 
 [![Build Status](https://travis-ci.org/ibm-cds-labs/java-graph.svg?branch=master)](https://travis-ci.org/ibm-cds-labs/java-graph)
